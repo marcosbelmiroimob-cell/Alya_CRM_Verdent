@@ -207,10 +207,10 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
           atualizadoEm: { gte: inicioMesAtual, lte: fimMesAtual },
         },
         include: {
-          lead: { select: { criadoEm: true } },
-          imovel: { select: { valor: true, comissaoPercentual: true } },
-          unidade: { select: { preco: true }, include: { torre: { include: { empreendimento: { select: { comissaoPercentual: true } } } } } },
-          imovelUsado: { select: { valorVenda: true, comissaoPercentual: true } },
+          lead: true,
+          imovel: true,
+          unidade: { include: { torre: { include: { empreendimento: true } } } },
+          imovelUsado: true,
         },
       }),
       prisma.negociacao.findMany({
@@ -220,9 +220,9 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
           atualizadoEm: { gte: inicioMesAnterior, lte: fimMesAnterior },
         },
         include: {
-          imovel: { select: { valor: true } },
-          unidade: { select: { preco: true } },
-          imovelUsado: { select: { valorVenda: true } },
+          imovel: true,
+          unidade: true,
+          imovelUsado: true,
         },
       }),
       prisma.negociacao.findMany({
@@ -318,9 +318,9 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
           atualizadoEm: { gte: inicioSemana, lte: fimSemana },
         },
         include: {
-          imovel: { select: { valor: true } },
-          unidade: { select: { preco: true } },
-          imovelUsado: { select: { valorVenda: true } },
+          imovel: true,
+          unidade: true,
+          imovelUsado: true,
         },
       })
 
