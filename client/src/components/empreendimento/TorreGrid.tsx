@@ -166,7 +166,7 @@ export function TorreGrid({ torreId, tipologias, onUpdate }: TorreGridProps) {
                     <button
                       onClick={() => handleUnidadeClick(unidade)}
                       className={`
-                        w-full aspect-square min-w-[48px] rounded-lg text-white text-xs font-medium
+                        w-16 h-12 rounded-lg text-white text-xs font-medium
                         transition-all transform hover:scale-105 hover:shadow-lg
                         ${statusColors[unidade.status]}
                       `}
