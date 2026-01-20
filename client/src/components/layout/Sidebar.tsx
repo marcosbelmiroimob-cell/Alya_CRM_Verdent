@@ -8,7 +8,9 @@ import {
   Sparkles,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Home,
+  Landmark
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../stores/authStore'
@@ -16,7 +18,9 @@ import { useAuthStore } from '../../stores/authStore'
 const navItems = [
   { to: '/', icon: Kanban, label: 'Pipeline' },
   { to: '/leads', icon: Users, label: 'Leads' },
-  { to: '/imoveis', icon: Building2, label: 'Imóveis' },
+  { to: '/empreendimentos', icon: Landmark, label: 'Lançamentos' },
+  { to: '/imoveis-usados', icon: Home, label: 'Usados' },
+  { to: '/imoveis', icon: Building2, label: 'Imóveis (Legado)' },
   { to: '/financeiro', icon: Wallet, label: 'Financeiro' },
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
 ]

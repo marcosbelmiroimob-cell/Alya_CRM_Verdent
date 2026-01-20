@@ -8,6 +8,9 @@ import { LeadsPage } from './pages/LeadsPage'
 import { ImoveisPage } from './pages/ImoveisPage'
 import { FinanceiroPage } from './pages/FinanceiroPage'
 import { DashboardPage } from './pages/DashboardPage'
+import { EmpreendimentosPage } from './pages/EmpreendimentosPage'
+import { EmpreendimentoDetailPage } from './pages/EmpreendimentoDetailPage'
+import { ImoveisUsadosPage } from './pages/ImoveisUsadosPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore()
@@ -29,6 +32,9 @@ export default function App() {
           <Route index element={<KanbanPage />} />
           <Route path="leads" element={<LeadsPage />} />
           <Route path="imoveis" element={<ImoveisPage />} />
+          <Route path="empreendimentos" element={<EmpreendimentosPage />} />
+          <Route path="empreendimentos/:id" element={<EmpreendimentoDetailPage />} />
+          <Route path="imoveis-usados" element={<ImoveisUsadosPage />} />
           <Route path="financeiro" element={<FinanceiroPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
         </Route>

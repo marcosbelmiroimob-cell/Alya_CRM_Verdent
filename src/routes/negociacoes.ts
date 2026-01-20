@@ -5,6 +5,8 @@ import { prisma } from '../utils/prisma.js'
 const negociacaoSchema = z.object({
   leadId: z.number(),
   imovelId: z.number().optional(),
+  unidadeId: z.number().optional(),
+  imovelUsadoId: z.number().optional(),
   etapaKanban: z.enum([
     'NOVO_LEAD',
     'PRIMEIRO_CONTATO',
@@ -44,6 +46,14 @@ export async function negociacaoRoutes(fastify: FastifyInstance) {
       include: {
         lead: { select: { id: true, nome: true, telefone: true, email: true, scoreQualificacao: true } },
         imovel: { select: { id: true, titulo: true, valor: true, tipoNegocio: true, comissaoPercentual: true } },
+        unidade: { 
+          select: { id: true, codigo: true, andar: true, posicao: true, preco: true, status: true },
+          include: { 
+            tipologia: { select: { nome: true, areaPrivativa: true } },
+            torre: { select: { nome: true, empreendimento: { select: { nome: true, incorporadora: true } } } }
+          }
+        },
+        imovelUsado: { select: { id: true, titulo: true, tipoImovel: true, valorVenda: true, comissaoPercentual: true } },
         atividades: { orderBy: { dataAtividade: 'desc' }, take: 1 },
       },
     })
@@ -60,6 +70,13 @@ export async function negociacaoRoutes(fastify: FastifyInstance) {
       include: {
         lead: { select: { id: true, nome: true, telefone: true, scoreQualificacao: true } },
         imovel: { select: { id: true, titulo: true, valor: true, comissaoPercentual: true } },
+        unidade: { 
+          include: { 
+            tipologia: { select: { nome: true, areaPrivativa: true } },
+            torre: { select: { nome: true, empreendimento: { select: { nome: true } } } }
+          }
+        },
+        imovelUsado: { select: { id: true, titulo: true, tipoImovel: true, valorVenda: true, comissaoPercentual: true } },
       },
     })
 
@@ -83,6 +100,13 @@ export async function negociacaoRoutes(fastify: FastifyInstance) {
       include: {
         lead: true,
         imovel: true,
+        unidade: { 
+          include: { 
+            tipologia: true,
+            torre: { include: { empreendimento: true } }
+          }
+        },
+        imovelUsado: true,
         atividades: { orderBy: { dataAtividade: 'desc' } },
         historicosIA: { orderBy: { criadoEm: 'desc' }, take: 10 },
       },
@@ -116,6 +140,27 @@ export async function negociacaoRoutes(fastify: FastifyInstance) {
         }
       }
 
+      if (body.unidadeId) {
+        const unidade = await prisma.unidade.findFirst({
+          where: { 
+            id: body.unidadeId,
+            torre: { empreendimento: { usuarioId: request.user.id } }
+          },
+        })
+        if (!unidade) {
+          return reply.status(400).send({ error: 'Unidade não encontrada' })
+        }
+      }
+
+      if (body.imovelUsadoId) {
+        const imovelUsado = await prisma.imovelUsado.findFirst({
+          where: { id: body.imovelUsadoId, usuarioId: request.user.id },
+        })
+        if (!imovelUsado) {
+          return reply.status(400).send({ error: 'Imóvel usado não encontrado' })
+        }
+      }
+
       const maxOrdem = await prisma.negociacao.aggregate({
         where: { usuarioId: request.user.id, etapaKanban: body.etapaKanban || 'NOVO_LEAD' },
         _max: { ordem: true },
@@ -131,6 +176,8 @@ export async function negociacaoRoutes(fastify: FastifyInstance) {
         include: {
           lead: true,
           imovel: true,
+          unidade: { include: { tipologia: true, torre: { include: { empreendimento: true } } } },
+          imovelUsado: true,
         },
       })
 
@@ -162,7 +209,12 @@ export async function negociacaoRoutes(fastify: FastifyInstance) {
 
       const updated = await prisma.negociacao.findUnique({
         where: { id: parseInt(id) },
-        include: { lead: true, imovel: true },
+        include: { 
+          lead: true, 
+          imovel: true,
+          unidade: { include: { tipologia: true, torre: { include: { empreendimento: true } } } },
+          imovelUsado: true,
+        },
       })
 
       return { negociacao: updated }
@@ -192,7 +244,12 @@ export async function negociacaoRoutes(fastify: FastifyInstance) {
 
       const updated = await prisma.negociacao.findUnique({
         where: { id: parseInt(id) },
-        include: { lead: true, imovel: true },
+        include: { 
+          lead: true, 
+          imovel: true,
+          unidade: { include: { tipologia: true, torre: { include: { empreendimento: true } } } },
+          imovelUsado: true,
+        },
       })
 
       return { negociacao: updated }

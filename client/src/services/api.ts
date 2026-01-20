@@ -94,4 +94,57 @@ export const dashboardService = {
   pipelineValores: () => api.get('/dashboard/pipeline-valores'),
 }
 
+export const empreendimentoService = {
+  listar: (params?: { status?: string; ativo?: boolean }) => 
+    api.get('/empreendimentos', { params }),
+  buscar: (id: number) => api.get(`/empreendimentos/${id}`),
+  criar: (data: any) => api.post('/empreendimentos', data),
+  atualizar: (id: number, data: any) => api.put(`/empreendimentos/${id}`, data),
+  excluir: (id: number) => api.delete(`/empreendimentos/${id}`),
+  estatisticas: (id: number) => api.get(`/empreendimentos/${id}/estatisticas`),
+}
+
+export const torreService = {
+  listar: (empreendimentoId: number) => 
+    api.get('/torres', { params: { empreendimentoId } }),
+  buscar: (id: number) => api.get(`/torres/${id}`),
+  criar: (data: any) => api.post('/torres', data),
+  atualizar: (id: number, data: any) => api.put(`/torres/${id}`, data),
+  excluir: (id: number) => api.delete(`/torres/${id}`),
+  grid: (id: number) => api.get(`/torres/${id}/grid`),
+}
+
+export const tipologiaService = {
+  listar: (empreendimentoId: number) => 
+    api.get('/tipologias', { params: { empreendimentoId } }),
+  buscar: (id: number) => api.get(`/tipologias/${id}`),
+  criar: (data: any) => api.post('/tipologias', data),
+  atualizar: (id: number, data: any) => api.put(`/tipologias/${id}`, data),
+  excluir: (id: number) => api.delete(`/tipologias/${id}`),
+  aplicarUnidades: (id: number, data: { unidadeIds: number[]; atualizarPreco?: boolean }) =>
+    api.post(`/tipologias/${id}/aplicar-unidades`, data),
+}
+
+export const unidadeService = {
+  listar: (torreId: number) => api.get('/unidades', { params: { torreId } }),
+  buscar: (id: number) => api.get(`/unidades/${id}`),
+  atualizar: (id: number, data: any) => api.put(`/unidades/${id}`, data),
+  atualizarStatus: (id: number, status: string) => 
+    api.patch(`/unidades/${id}/status`, { status }),
+  atualizarMassa: (data: { unidadeIds: number[]; tipologiaId?: number; status?: string; posicaoSolar?: string }) =>
+    api.patch('/unidades/bulk', data),
+  disponiveis: (empreendimentoId: number) =>
+    api.get('/unidades/disponiveis', { params: { empreendimentoId } }),
+}
+
+export const imovelUsadoService = {
+  listar: (params?: { tipo?: string; ativo?: boolean }) => 
+    api.get('/imoveis-usados', { params }),
+  buscar: (id: number) => api.get(`/imoveis-usados/${id}`),
+  criar: (data: any) => api.post('/imoveis-usados', data),
+  atualizar: (id: number, data: any) => api.put(`/imoveis-usados/${id}`, data),
+  excluir: (id: number) => api.delete(`/imoveis-usados/${id}`),
+  ativos: () => api.get('/imoveis-usados/ativos'),
+}
+
 export default api

@@ -13,6 +13,11 @@ import { financeiroRoutes } from './routes/financeiro.js'
 import { iaRoutes } from './routes/ia.js'
 import { atividadeRoutes } from './routes/atividades.js'
 import { dashboardRoutes } from './routes/dashboard.js'
+import { empreendimentoRoutes } from './routes/empreendimentos.js'
+import { torreRoutes } from './routes/torres.js'
+import { tipologiaRoutes } from './routes/tipologias.js'
+import { unidadeRoutes } from './routes/unidades.js'
+import { imovelUsadoRoutes } from './routes/imoveis-usados.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
@@ -51,6 +56,11 @@ async function bootstrap() {
   await fastify.register(iaRoutes, { prefix: '/api/ia' })
   await fastify.register(atividadeRoutes, { prefix: '/api/atividades' })
   await fastify.register(dashboardRoutes, { prefix: '/api/dashboard' })
+  await fastify.register(empreendimentoRoutes, { prefix: '/api/empreendimentos' })
+  await fastify.register(torreRoutes, { prefix: '/api/torres' })
+  await fastify.register(tipologiaRoutes, { prefix: '/api/tipologias' })
+  await fastify.register(unidadeRoutes, { prefix: '/api/unidades' })
+  await fastify.register(imovelUsadoRoutes, { prefix: '/api/imoveis-usados' })
 
   const publicPath = join(__dirname, '..', 'public')
   

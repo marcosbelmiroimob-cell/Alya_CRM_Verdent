@@ -20,6 +20,12 @@ export type TipoMensagem =
   | 'NEGOCIACAO'
   | 'POS_VENDA'
 
+export type StatusEmpreendimento = 'FUTURO_LANCAMENTO' | 'EM_CONSTRUCAO' | 'PRONTO'
+export type StatusUnidade = 'DISPONIVEL' | 'RESERVADO' | 'VENDIDO' | 'BLOQUEADO'
+export type TipoImovelUsado = 'APARTAMENTO' | 'CASA' | 'TERRENO' | 'SALA_COMERCIAL' | 'COBERTURA' | 'LOFT'
+export type Documentacao = 'ESCRITURADO' | 'FINANCIADO' | 'INVENTARIO' | 'IRREGULAR'
+export type PosicaoSolar = 'NASCENTE' | 'POENTE' | 'NORTE' | 'SUL'
+
 export interface Usuario {
   id: number
   nome: string
@@ -144,4 +150,113 @@ export interface QualificacaoResult {
   recomendacoes: string[]
   sinaisPositivos: string[]
   sinaisNegativos: string[]
+}
+
+export interface Empreendimento {
+  id: number
+  usuarioId: number
+  nome: string
+  incorporadora?: string
+  endereco?: string
+  cidade?: string
+  bairro?: string
+  status: StatusEmpreendimento
+  dataLancamento?: string
+  dataEntrega?: string
+  comissaoPercentual: number
+  descricao?: string
+  caracteristicas?: Record<string, any>
+  fotos?: string[]
+  ativo: boolean
+  criadoEm: string
+  atualizadoEm: string
+  torres?: Torre[]
+  tipologias?: Tipologia[]
+}
+
+export interface Torre {
+  id: number
+  empreendimentoId: number
+  nome: string
+  totalAndares: number
+  unidadesPorAndar: number
+  criadoEm: string
+  atualizadoEm: string
+  empreendimento?: Empreendimento
+  unidades?: Unidade[]
+}
+
+export interface Tipologia {
+  id: number
+  empreendimentoId: number
+  nome: string
+  areaPrivativa: number
+  quartos: number
+  suites: number
+  vagas: number
+  precoBase: number
+  diferenciais?: Record<string, any>
+  criadoEm: string
+  atualizadoEm: string
+}
+
+export interface Unidade {
+  id: number
+  torreId: number
+  tipologiaId?: number
+  codigo: string
+  andar: number
+  posicao: string
+  posicaoSolar?: PosicaoSolar
+  preco?: number
+  precoM2?: number
+  status: StatusUnidade
+  extras?: Record<string, any>
+  criadoEm: string
+  atualizadoEm: string
+  torre?: Torre
+  tipologia?: Tipologia
+}
+
+export interface ImovelUsado {
+  id: number
+  usuarioId: number
+  tipoImovel: TipoImovelUsado
+  titulo: string
+  descricao?: string
+  endereco?: string
+  cidade?: string
+  bairro?: string
+  areaUtil?: number
+  areaTotal?: number
+  quartos: number
+  suites: number
+  vagas: number
+  valorAvaliacao?: number
+  valorVenda: number
+  comissaoPercentual: number
+  documentacao: Documentacao
+  nomeProprietario?: string
+  telefoneProprietario?: string
+  emailProprietario?: string
+  caracteristicas?: Record<string, any>
+  fotos?: string[]
+  ativo: boolean
+  criadoEm: string
+  atualizadoEm: string
+}
+
+export interface TorreGrid {
+  torre: Torre
+  andares: {
+    numero: number
+    unidades: Unidade[]
+  }[]
+  estatisticas: {
+    total: number
+    disponiveis: number
+    reservados: number
+    vendidos: number
+    bloqueados: number
+  }
 }

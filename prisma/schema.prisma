@@ -58,6 +58,42 @@ enum TipoAtividade {
   OUTRO
 }
 
+enum StatusEmpreendimento {
+  FUTURO_LANCAMENTO
+  EM_CONSTRUCAO
+  PRONTO
+}
+
+enum StatusUnidade {
+  DISPONIVEL
+  RESERVADO
+  VENDIDO
+  BLOQUEADO
+}
+
+enum TipoImovelUsado {
+  APARTAMENTO
+  CASA
+  TERRENO
+  SALA_COMERCIAL
+  COBERTURA
+  LOFT
+}
+
+enum Documentacao {
+  ESCRITURADO
+  FINANCIADO
+  INVENTARIO
+  IRREGULAR
+}
+
+enum PosicaoSolar {
+  NASCENTE
+  POENTE
+  NORTE
+  SUL
+}
+
 model Usuario {
   id           Int      @id @default(autoincrement())
   nome         String   @db.VarChar(255)
@@ -70,10 +106,12 @@ model Usuario {
   criadoEm     DateTime @default(now()) @map("criado_em")
   atualizadoEm DateTime @updatedAt @map("atualizado_em")
 
-  leads       Lead[]
-  imoveis     Imovel[]
-  negociacoes Negociacao[]
-  transacoes  TransacaoFinanceira[]
+  leads          Lead[]
+  imoveis        Imovel[]
+  negociacoes    Negociacao[]
+  transacoes     TransacaoFinanceira[]
+  empreendimentos Empreendimento[]
+  imoveisUsados  ImovelUsado[]
 
   @@map("usuarios")
 }
@@ -126,11 +164,138 @@ model Imovel {
   @@map("imoveis")
 }
 
+model Empreendimento {
+  id                 Int                   @id @default(autoincrement())
+  usuarioId          Int                   @map("usuario_id")
+  nome               String                @db.VarChar(255)
+  incorporadora      String?               @db.VarChar(255)
+  endereco           String?               @db.VarChar(500)
+  cidade             String?               @db.VarChar(100)
+  bairro             String?               @db.VarChar(100)
+  status             StatusEmpreendimento  @default(EM_CONSTRUCAO)
+  dataLancamento     DateTime?             @map("data_lancamento") @db.Date
+  dataEntrega        DateTime?             @map("data_entrega") @db.Date
+  comissaoPercentual Decimal               @default(5.0) @map("comissao_percentual") @db.Decimal(5, 2)
+  descricao          String?               @db.Text
+  caracteristicas    Json?
+  fotos              Json?
+  ativo              Boolean               @default(true)
+  criadoEm           DateTime              @default(now()) @map("criado_em")
+  atualizadoEm       DateTime              @updatedAt @map("atualizado_em")
+
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  torres     Torre[]
+  tipologias Tipologia[]
+
+  @@index([usuarioId])
+  @@index([status])
+  @@map("empreendimentos")
+}
+
+model Torre {
+  id               Int      @id @default(autoincrement())
+  empreendimentoId Int      @map("empreendimento_id")
+  nome             String   @db.VarChar(100)
+  totalAndares     Int      @map("total_andares")
+  unidadesPorAndar Int      @map("unidades_por_andar")
+  criadoEm         DateTime @default(now()) @map("criado_em")
+  atualizadoEm     DateTime @updatedAt @map("atualizado_em")
+
+  empreendimento Empreendimento @relation(fields: [empreendimentoId], references: [id], onDelete: Cascade)
+  unidades       Unidade[]
+
+  @@index([empreendimentoId])
+  @@map("torres")
+}
+
+model Tipologia {
+  id               Int      @id @default(autoincrement())
+  empreendimentoId Int      @map("empreendimento_id")
+  nome             String   @db.VarChar(100)
+  areaPrivativa    Decimal  @map("area_privativa") @db.Decimal(10, 2)
+  quartos          Int      @default(0)
+  suites           Int      @default(0)
+  vagas            Int      @default(0)
+  precoBase        Decimal  @map("preco_base") @db.Decimal(15, 2)
+  diferenciais     Json?
+  criadoEm         DateTime @default(now()) @map("criado_em")
+  atualizadoEm     DateTime @updatedAt @map("atualizado_em")
+
+  empreendimento Empreendimento @relation(fields: [empreendimentoId], references: [id], onDelete: Cascade)
+  unidades       Unidade[]
+
+  @@index([empreendimentoId])
+  @@map("tipologias")
+}
+
+model Unidade {
+  id           Int           @id @default(autoincrement())
+  torreId      Int           @map("torre_id")
+  tipologiaId  Int?          @map("tipologia_id")
+  codigo       String        @db.VarChar(20)
+  andar        Int
+  posicao      String        @db.VarChar(10)
+  posicaoSolar PosicaoSolar? @map("posicao_solar")
+  preco        Decimal?      @db.Decimal(15, 2)
+  precoM2      Decimal?      @map("preco_m2") @db.Decimal(15, 2)
+  status       StatusUnidade @default(DISPONIVEL)
+  extras       Json?
+  criadoEm     DateTime      @default(now()) @map("criado_em")
+  atualizadoEm DateTime      @updatedAt @map("atualizado_em")
+
+  torre       Torre       @relation(fields: [torreId], references: [id], onDelete: Cascade)
+  tipologia   Tipologia?  @relation(fields: [tipologiaId], references: [id], onDelete: SetNull)
+  negociacoes Negociacao[]
+
+  @@unique([torreId, codigo])
+  @@index([torreId])
+  @@index([tipologiaId])
+  @@index([status])
+  @@map("unidades")
+}
+
+model ImovelUsado {
+  id                   Int             @id @default(autoincrement())
+  usuarioId            Int             @map("usuario_id")
+  tipoImovel           TipoImovelUsado @map("tipo_imovel")
+  titulo               String          @db.VarChar(255)
+  descricao            String?         @db.Text
+  endereco             String?         @db.VarChar(500)
+  cidade               String?         @db.VarChar(100)
+  bairro               String?         @db.VarChar(100)
+  areaUtil             Decimal?        @map("area_util") @db.Decimal(10, 2)
+  areaTotal            Decimal?        @map("area_total") @db.Decimal(10, 2)
+  quartos              Int             @default(0)
+  suites               Int             @default(0)
+  vagas                Int             @default(0)
+  valorAvaliacao       Decimal?        @map("valor_avaliacao") @db.Decimal(15, 2)
+  valorVenda           Decimal         @map("valor_venda") @db.Decimal(15, 2)
+  comissaoPercentual   Decimal         @default(6.0) @map("comissao_percentual") @db.Decimal(5, 2)
+  documentacao         Documentacao    @default(ESCRITURADO)
+  nomeProprietario     String?         @map("nome_proprietario") @db.VarChar(255)
+  telefoneProprietario String?         @map("telefone_proprietario") @db.VarChar(20)
+  emailProprietario    String?         @map("email_proprietario") @db.VarChar(255)
+  caracteristicas      Json?
+  fotos                Json?
+  ativo                Boolean         @default(true)
+  criadoEm             DateTime        @default(now()) @map("criado_em")
+  atualizadoEm         DateTime        @updatedAt @map("atualizado_em")
+
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  negociacoes Negociacao[]
+
+  @@index([usuarioId])
+  @@index([tipoImovel])
+  @@map("imoveis_usados")
+}
+
 model Negociacao {
   id              Int          @id @default(autoincrement())
   usuarioId       Int          @map("usuario_id")
   leadId          Int          @map("lead_id")
   imovelId        Int?         @map("imovel_id")
+  unidadeId       Int?         @map("unidade_id")
+  imovelUsadoId   Int?         @map("imovel_usado_id")
   etapaKanban     EtapaKanban  @default(NOVO_LEAD) @map("etapa_kanban")
   valorProposta   Decimal?     @map("valor_proposta") @db.Decimal(15, 2)
   observacoes     String?      @db.Text
@@ -139,15 +304,19 @@ model Negociacao {
   criadoEm        DateTime     @default(now()) @map("criado_em")
   atualizadoEm    DateTime     @updatedAt @map("atualizado_em")
 
-  usuario     Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  lead        Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
-  imovel      Imovel?       @relation(fields: [imovelId], references: [id], onDelete: SetNull)
+  usuario      Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  lead         Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  imovel       Imovel?       @relation(fields: [imovelId], references: [id], onDelete: SetNull)
+  unidade      Unidade?      @relation(fields: [unidadeId], references: [id], onDelete: SetNull)
+  imovelUsado  ImovelUsado?  @relation(fields: [imovelUsadoId], references: [id], onDelete: SetNull)
   historicosIA HistoricoIA[]
-  atividades  Atividade[]
-  transacoes  TransacaoFinanceira[]
+  atividades   Atividade[]
+  transacoes   TransacaoFinanceira[]
 
   @@index([usuarioId])
   @@index([etapaKanban])
+  @@index([unidadeId])
+  @@index([imovelUsadoId])
   @@map("negociacoes")
 }
 
