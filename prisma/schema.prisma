@@ -112,6 +112,7 @@ model Usuario {
   transacoes     TransacaoFinanceira[]
   empreendimentos Empreendimento[]
   imoveisUsados  ImovelUsado[]
+  conversasAlya  ConversaAlya[]
 
   @@map("usuarios")
 }
@@ -370,4 +371,81 @@ model Atividade {
 
   @@index([negociacaoId])
   @@map("atividades")
+}
+
+enum TipoConversaAlya {
+  QUALIFICACAO
+  ASSISTENTE
+  SUPORTE
+}
+
+enum StatusConversaAlya {
+  ATIVA
+  PAUSADA
+  FINALIZADA
+  TRANSFERIDA
+}
+
+enum TipoLembrete {
+  FOLLOW_UP
+  VISITA
+  PROPOSTA
+  CONTATO
+  ANIVERSARIO
+  PERSONALIZADO
+}
+
+model ConversaAlya {
+  id           Int               @id @default(autoincrement())
+  usuarioId    Int               @map("usuario_id")
+  leadId       Int?              @map("lead_id")
+  tipo         TipoConversaAlya  @default(QUALIFICACAO)
+  status       StatusConversaAlya @default(ATIVA)
+  contexto     String?           @db.VarChar(100)
+  perfilColetado Json?           @map("perfil_coletado")
+  scoreQualificacao Int?         @map("score_qualificacao")
+  criadoEm     DateTime          @default(now()) @map("criado_em")
+  atualizadoEm DateTime          @updatedAt @map("atualizado_em")
+  finalizadoEm DateTime?         @map("finalizado_em")
+
+  usuario   Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  mensagens MensagemAlya[]
+
+  @@index([usuarioId])
+  @@index([leadId])
+  @@index([status])
+  @@map("conversas_alya")
+}
+
+model MensagemAlya {
+  id          Int      @id @default(autoincrement())
+  conversaId  Int      @map("conversa_id")
+  remetente   String   @db.VarChar(20)
+  conteudo    String   @db.Text
+  metadados   Json?
+  criadoEm    DateTime @default(now()) @map("criado_em")
+
+  conversa ConversaAlya @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+
+  @@index([conversaId])
+  @@map("mensagens_alya")
+}
+
+model Lembrete {
+  id           Int           @id @default(autoincrement())
+  usuarioId    Int           @map("usuario_id")
+  leadId       Int?          @map("lead_id")
+  negociacaoId Int?          @map("negociacao_id")
+  tipo         TipoLembrete
+  titulo       String        @db.VarChar(255)
+  descricao    String?       @db.Text
+  dataLembrete DateTime      @map("data_lembrete")
+  lido         Boolean       @default(false)
+  acionado     Boolean       @default(false)
+  criadoEm     DateTime      @default(now()) @map("criado_em")
+
+  @@index([usuarioId])
+  @@index([dataLembrete])
+  @@index([lido])
+  @@map("lembretes")
 }

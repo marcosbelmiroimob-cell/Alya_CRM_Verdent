@@ -150,4 +150,16 @@ export const imovelUsadoService = {
   ativos: () => api.get('/imoveis-usados/ativos'),
 }
 
+export const alyaService = {
+  chat: (data: { mensagem: string; contexto?: string; paginaAtual?: string }) =>
+    api.post('/alya/chat', data),
+  qualificar: (data: { mensagem: string; conversaId?: number | null; leadId?: number }) =>
+    api.post('/alya/qualificar', data),
+  sugestoes: () => api.get('/alya/sugestoes'),
+  conversas: (status?: string) => api.get('/alya/conversas', { params: { status } }),
+  conversa: (id: number) => api.get(`/alya/conversa/${id}`),
+  criarLeadQualificado: (data: { conversaId: number; nome?: string }) =>
+    api.post('/alya/criar-lead-qualificado', data),
+}
+
 export default api

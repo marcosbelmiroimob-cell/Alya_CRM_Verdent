@@ -11,6 +11,7 @@ import { imovelRoutes } from './routes/imoveis.js'
 import { negociacaoRoutes } from './routes/negociacoes.js'
 import { financeiroRoutes } from './routes/financeiro.js'
 import { iaRoutes } from './routes/ia.js'
+import { alyaRoutes } from './routes/alya.js'
 import { atividadeRoutes } from './routes/atividades.js'
 import { dashboardRoutes } from './routes/dashboard.js'
 import { empreendimentoRoutes } from './routes/empreendimentos.js'
@@ -54,6 +55,7 @@ async function bootstrap() {
   await fastify.register(negociacaoRoutes, { prefix: '/api/negociacoes' })
   await fastify.register(financeiroRoutes, { prefix: '/api/financeiro' })
   await fastify.register(iaRoutes, { prefix: '/api/ia' })
+  await fastify.register(alyaRoutes, { prefix: '/api/alya' })
   await fastify.register(atividadeRoutes, { prefix: '/api/atividades' })
   await fastify.register(dashboardRoutes, { prefix: '/api/dashboard' })
   await fastify.register(empreendimentoRoutes, { prefix: '/api/empreendimentos' })
