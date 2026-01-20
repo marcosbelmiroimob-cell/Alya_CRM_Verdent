@@ -156,6 +156,58 @@ export async function unidadeRoutes(fastify: FastifyInstance) {
     return reply.send({ success: true, updated: body.unidadeIds.length })
   })
 
+  fastify.post('/bulk-update-values', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as { id: number }
+    const body = z.object({
+      unidades: z.array(z.object({
+        id: z.number(),
+        tipologiaId: z.number().nullable().optional(),
+        status: z.enum(['DISPONIVEL', 'RESERVADO', 'VENDIDO', 'BLOQUEADO']).optional(),
+        preco: z.number().nullable().optional(),
+        posicaoSolar: z.enum(['NASCENTE', 'POENTE', 'NORTE', 'SUL']).nullable().optional(),
+      })),
+    }).parse(request.body)
+
+    const unidadeIds = body.unidades.map(u => u.id)
+    const existingUnidades = await prisma.unidade.findMany({
+      where: { id: { in: unidadeIds } },
+      include: { 
+        torre: { include: { empreendimento: true } },
+        tipologia: true,
+      },
+    })
+
+    const allBelongToUser = existingUnidades.every(u => u.torre.empreendimento.usuarioId === user.id)
+    if (!allBelongToUser) {
+      return reply.status(403).send({ error: 'Acesso negado a algumas unidades' })
+    }
+
+    const updatePromises = body.unidades.map(async (unidadeData) => {
+      const updateData: any = {}
+      
+      if (unidadeData.tipologiaId !== undefined) updateData.tipologiaId = unidadeData.tipologiaId
+      if (unidadeData.status !== undefined) updateData.status = unidadeData.status
+      if (unidadeData.preco !== undefined) updateData.preco = unidadeData.preco
+      if (unidadeData.posicaoSolar !== undefined) updateData.posicaoSolar = unidadeData.posicaoSolar
+
+      if (unidadeData.preco !== undefined && unidadeData.preco !== null) {
+        const existing = existingUnidades.find(u => u.id === unidadeData.id)
+        if (existing?.tipologia) {
+          updateData.precoM2 = unidadeData.preco / Number(existing.tipologia.areaPrivativa)
+        }
+      }
+
+      return prisma.unidade.update({
+        where: { id: unidadeData.id },
+        data: updateData,
+      })
+    })
+
+    await Promise.all(updatePromises)
+
+    return reply.send({ success: true, updated: body.unidades.length })
+  })
+
   fastify.get('/disponiveis', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as { id: number }
     const { empreendimentoId } = request.query as { empreendimentoId?: string }

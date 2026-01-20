@@ -134,6 +134,8 @@ export const unidadeService = {
     api.patch(`/unidades/${id}/status`, { status }),
   atualizarMassa: (data: { unidadeIds: number[]; tipologiaId?: number; status?: string; posicaoSolar?: string }) =>
     api.patch('/unidades/bulk', data),
+  atualizarValores: (data: { unidades: Array<{ id: number; tipologiaId?: number | null; status?: string; preco?: number | null; posicaoSolar?: string | null }> }) =>
+    api.post('/unidades/bulk-update-values', data),
   disponiveis: (empreendimentoId: number) =>
     api.get('/unidades/disponiveis', { params: { empreendimentoId } }),
 }

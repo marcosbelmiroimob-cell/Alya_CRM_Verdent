@@ -27,6 +27,7 @@ interface UnidadeDetailsPanelProps {
     preco: string
     posicaoSolar: string
   }) => void
+  inModal?: boolean
 }
 
 const statusLabels: Record<StatusUnidade, string> = {
@@ -58,6 +59,7 @@ export function UnidadeDetailsPanel({
   saving,
   formData,
   onFormChange,
+  inModal = false,
 }: UnidadeDetailsPanelProps) {
   if (!unidade) return null
 
@@ -77,16 +79,18 @@ export function UnidadeDetailsPanel({
   }
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
-      <div className="relative bg-slate-900 text-white p-6 text-center">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-2 hover:bg-slate-800 rounded-lg transition-colors"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <div className={inModal ? '' : 'bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden'}>
+      <div className={`relative ${inModal ? 'bg-slate-100 dark:bg-slate-700' : 'bg-slate-900'} ${inModal ? 'text-slate-900 dark:text-white' : 'text-white'} p-6 text-center ${inModal ? 'rounded-xl' : ''}`}>
+        {!inModal && (
+          <button
+            onClick={onClose}
+            className="absolute top-4 right-4 p-2 hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        )}
 
-        <div className={`inline-flex items-center justify-center w-24 h-24 rounded-2xl ${statusColors[unidade.status]} text-white text-3xl font-bold mb-4`}>
+        <div className={`inline-flex items-center justify-center w-20 h-20 md:w-24 md:h-24 rounded-2xl ${statusColors[unidade.status]} text-white text-2xl md:text-3xl font-bold mb-4`}>
           {unidade.codigo}
         </div>
 
@@ -94,7 +98,7 @@ export function UnidadeDetailsPanel({
           {tipologia?.nome || 'Sem tipologia'}
         </h3>
 
-        <span className={`inline-block px-4 py-1.5 rounded-full text-sm font-medium ${
+        <span className={`inline-block px-4 py-1.5 rounded-full text-sm font-medium text-white ${
           unidade.status === 'DISPONIVEL' ? 'bg-emerald-500' :
           unidade.status === 'RESERVADO' ? 'bg-amber-500' :
           unidade.status === 'VENDIDO' ? 'bg-rose-500' : 'bg-slate-500'
