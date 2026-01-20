@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Plus, Building2, MapPin, Layers, Tag, Settings } from 'lucide-react'
+import { ArrowLeft, Plus, Building2, MapPin, Layers, Tag, Settings, ChevronDown } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
@@ -28,6 +28,8 @@ export function EmpreendimentoDetailPage() {
   const [showTorreModal, setShowTorreModal] = useState(false)
   const [showTipologiaModal, setShowTipologiaModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
+  const [showTorresPanel, setShowTorresPanel] = useState(false)
+  const [showTipologiasPanel, setShowTipologiasPanel] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const [editForm, setEditForm] = useState({
@@ -191,21 +193,21 @@ export function EmpreendimentoDetailPage() {
   }
 
   return (
-    <div>
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" onClick={() => navigate('/empreendimentos')}>
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <Button variant="ghost" onClick={() => navigate('/empreendimentos')} className="self-start">
           <ArrowLeft className="w-4 h-4" />
         </Button>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          <div className="flex flex-wrap items-center gap-2 md:gap-3">
+            <h1 className="text-xl md:text-2xl font-bold text-slate-900 dark:text-white">
               {empreendimento.nome}
             </h1>
             <Badge variant={empreendimento.status === 'PRONTO' ? 'success' : empreendimento.status === 'EM_CONSTRUCAO' ? 'warning' : 'info'}>
               {statusLabels[empreendimento.status]}
             </Badge>
           </div>
-          <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 mt-1">
+          <div className="flex flex-wrap items-center gap-3 md:gap-4 text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-1">
             {empreendimento.incorporadora && (
               <span className="flex items-center gap-1">
                 <Building2 className="w-4 h-4" />
@@ -220,14 +222,87 @@ export function EmpreendimentoDetailPage() {
             )}
           </div>
         </div>
-        <Button variant="outline" onClick={openEditModal}>
-          <Settings className="w-4 h-4 mr-2" />
-          Editar
+        <Button variant="outline" onClick={openEditModal} className="self-start sm:self-auto">
+          <Settings className="w-4 h-4 md:mr-2" />
+          <span className="hidden md:inline">Editar</span>
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        <div className="lg:col-span-1 space-y-4">
+      <div className="flex flex-wrap gap-2 md:hidden">
+        <button
+          onClick={() => setShowTorresPanel(!showTorresPanel)}
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium"
+        >
+          <Layers className="w-4 h-4" />
+          Torres ({torres.length})
+          <ChevronDown className={`w-4 h-4 transition-transform ${showTorresPanel ? 'rotate-180' : ''}`} />
+        </button>
+        <button
+          onClick={() => setShowTipologiasPanel(!showTipologiasPanel)}
+          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm font-medium"
+        >
+          <Tag className="w-4 h-4" />
+          Tipologias ({tipologias.length})
+          <ChevronDown className={`w-4 h-4 transition-transform ${showTipologiasPanel ? 'rotate-180' : ''}`} />
+        </button>
+      </div>
+
+      {showTorresPanel && (
+        <Card className="md:hidden">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <Layers className="w-4 h-4" />
+              Torres
+            </h3>
+            <Button size="sm" onClick={() => setShowTorreModal(true)}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {torres.map((torre) => (
+              <button
+                key={torre.id}
+                onClick={() => {
+                  setSelectedTorre(torre)
+                  setShowTorresPanel(false)
+                }}
+                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  selectedTorre?.id === torre.id
+                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-300'
+                    : 'border-slate-200 dark:border-slate-700'
+                }`}
+              >
+                {torre.nome}
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {showTipologiasPanel && (
+        <Card className="md:hidden">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+              <Tag className="w-4 h-4" />
+              Tipologias
+            </h3>
+            <Button size="sm" onClick={() => setShowTipologiaModal(true)}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="space-y-2">
+            {tipologias.map((tip) => (
+              <div key={tip.id} className="p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+                <p className="font-medium text-slate-900 dark:text-white">{tip.nome}</p>
+                <p className="text-xs text-slate-500">{tip.areaPrivativa}m² • {formatCurrency(tip.precoBase)}</p>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="hidden md:block lg:col-span-1 space-y-4">
           <Card>
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
@@ -314,10 +389,10 @@ export function EmpreendimentoDetailPage() {
               <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">
                 Selecione uma torre
               </h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-4">
+              <p className="text-slate-500 dark:text-slate-400 mb-4 text-sm">
                 {torres.length === 0 
                   ? 'Cadastre uma torre para visualizar as unidades'
-                  : 'Clique em uma torre ao lado para ver o grid de unidades'
+                  : 'Clique em uma torre para ver o grid de unidades'
                 }
               </p>
               {torres.length === 0 && (
@@ -447,7 +522,7 @@ export function EmpreendimentoDetailPage() {
             required
           />
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Incorporadora"
               value={editForm.incorporadora}
@@ -480,7 +555,7 @@ export function EmpreendimentoDetailPage() {
             onChange={(e) => setEditForm({ ...editForm, endereco: e.target.value })}
           />
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Input
               label="Bairro"
               value={editForm.bairro}

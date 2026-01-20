@@ -1,10 +1,8 @@
 import { useEffect, useState } from 'react'
+import { Grid3X3 } from 'lucide-react'
 import { Card } from '../ui/Card'
-import { Badge } from '../ui/Badge'
-import { Modal } from '../ui/Modal'
-import { Button } from '../ui/Button'
-import { Select } from '../ui/Select'
-import { Input } from '../ui/Input'
+import { BottomSheet } from '../ui/BottomSheet'
+import { UnidadeDetailsPanel } from './UnidadeDetailsPanel'
 import { Unidade, Tipologia, StatusUnidade, TorreGrid as TorreGridType } from '../../types'
 import { torreService, unidadeService } from '../../services/api'
 
@@ -21,13 +19,6 @@ const statusColors: Record<StatusUnidade, string> = {
   BLOQUEADO: 'bg-slate-400 hover:bg-slate-500',
 }
 
-const statusBorderColors: Record<StatusUnidade, string> = {
-  DISPONIVEL: 'border-emerald-500',
-  RESERVADO: 'border-amber-500',
-  VENDIDO: 'border-rose-500',
-  BLOQUEADO: 'border-slate-400',
-}
-
 const statusLabels: Record<StatusUnidade, string> = {
   DISPONIVEL: 'Disponível',
   RESERVADO: 'Reservado',
@@ -39,7 +30,7 @@ export function TorreGrid({ torreId, tipologias, onUpdate }: TorreGridProps) {
   const [gridData, setGridData] = useState<TorreGridType | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedUnidade, setSelectedUnidade] = useState<Unidade | null>(null)
-  const [showModal, setShowModal] = useState(false)
+  const [showMobileSheet, setShowMobileSheet] = useState(false)
   const [saving, setSaving] = useState(false)
 
   const [formData, setFormData] = useState({
@@ -73,21 +64,26 @@ export function TorreGrid({ torreId, tipologias, onUpdate }: TorreGridProps) {
       preco: unidade.preco?.toString() || '',
       posicaoSolar: unidade.posicaoSolar || '',
     })
-    setShowModal(true)
+    setShowMobileSheet(true)
   }
 
-  const handleSaveUnidade = async () => {
+  const handleCloseDetails = () => {
+    setSelectedUnidade(null)
+    setShowMobileSheet(false)
+  }
+
+  const handleSaveUnidade = async (data: {
+    tipologiaId: number | null
+    status: StatusUnidade
+    preco: number | null
+    posicaoSolar: string | null
+  }) => {
     if (!selectedUnidade) return
     
     setSaving(true)
     try {
-      await unidadeService.atualizar(selectedUnidade.id, {
-        tipologiaId: formData.tipologiaId ? parseInt(formData.tipologiaId) : null,
-        status: formData.status || undefined,
-        preco: formData.preco ? parseFloat(formData.preco) : null,
-        posicaoSolar: formData.posicaoSolar || null,
-      })
-      setShowModal(false)
+      await unidadeService.atualizar(selectedUnidade.id, data)
+      handleCloseDetails()
       loadGrid()
       onUpdate?.()
     } catch (error) {
@@ -95,10 +91,6 @@ export function TorreGrid({ torreId, tipologias, onUpdate }: TorreGridProps) {
     } finally {
       setSaving(false)
     }
-  }
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
   }
 
   if (loading) {
@@ -120,180 +112,117 @@ export function TorreGrid({ torreId, tipologias, onUpdate }: TorreGridProps) {
   const unidadesPorAndar = gridData.torre.unidadesPorAndar || gridData.andares[0]?.unidades.length || 4
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h3 className="text-xl font-bold text-slate-900 dark:text-white">
-            {gridData.torre.nome}
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            {gridData.estatisticas.total} unidades • {gridData.estatisticas.disponiveis} disponíveis
-          </p>
-        </div>
-        <div className="flex gap-3">
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-emerald-500" />
-            <span className="text-sm text-slate-600 dark:text-slate-400">{gridData.estatisticas.disponiveis}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-amber-500" />
-            <span className="text-sm text-slate-600 dark:text-slate-400">{gridData.estatisticas.reservados}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-rose-500" />
-            <span className="text-sm text-slate-600 dark:text-slate-400">{gridData.estatisticas.vendidos}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 rounded bg-slate-400" />
-            <span className="text-sm text-slate-600 dark:text-slate-400">{gridData.estatisticas.bloqueados}</span>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-center">
-        <div className="inline-block">
-          <div 
-            className="border-4 border-slate-800 dark:border-slate-300 rounded-t-[40px] rounded-b-lg p-3 bg-white dark:bg-slate-900"
-            style={{ minWidth: `${unidadesPorAndar * 56 + 24}px` }}
-          >
-            <div className="space-y-1">
-              {gridData.andares.map((andar) => (
-                <div key={andar.numero} className="flex items-center gap-2">
-                  <span className="w-8 text-xs font-medium text-slate-500 dark:text-slate-400 text-right">
-                    {andar.numero}º
-                  </span>
-                  <div className="flex gap-1">
-                    {andar.unidades.map((unidade) => (
-                      <button
-                        key={unidade.id}
-                        onClick={() => handleUnidadeClick(unidade)}
-                        className={`
-                          w-12 h-10 rounded border-2 text-white text-[10px] font-bold
-                          transition-all transform hover:scale-110 hover:shadow-lg hover:z-10
-                          ${statusColors[unidade.status]}
-                          ${statusBorderColors[unidade.status]}
-                        `}
-                        title={`${unidade.codigo} - ${statusLabels[unidade.status]}${unidade.tipologia ? ` - ${unidade.tipologia.nome}` : ''}`}
-                      >
-                        {unidade.codigo}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+    <div className="flex flex-col lg:flex-row gap-4">
+      <div className="flex-1">
+        <Card className="p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                {gridData.torre.nome}
+              </h3>
+              <p className="text-sm text-emerald-600 flex items-center gap-1">
+                <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+                DISPONIBILIDADE EM TEMPO REAL
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <Grid3X3 className="w-5 h-5" />
+              <span>{unidadesPorAndar} UNID/ANDAR</span>
             </div>
           </div>
-          
-          <div className="flex justify-center mt-4">
-            <span className="bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-full">
-              INVENTARIO ATIVO
-            </span>
+
+          <div className="flex gap-3 mb-4 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-emerald-500" />
+              <span className="text-xs text-slate-600 dark:text-slate-400">{gridData.estatisticas.disponiveis} Disponíveis</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-amber-500" />
+              <span className="text-xs text-slate-600 dark:text-slate-400">{gridData.estatisticas.reservados} Reservados</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-rose-500" />
+              <span className="text-xs text-slate-600 dark:text-slate-400">{gridData.estatisticas.vendidos} Vendidos</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-slate-400" />
+              <span className="text-xs text-slate-600 dark:text-slate-400">{gridData.estatisticas.bloqueados} Bloqueados</span>
+            </div>
           </div>
-        </div>
+
+          <div className="space-y-2 overflow-x-auto">
+            {gridData.andares.map((andar) => (
+              <div key={andar.numero} className="flex items-center gap-2 min-w-fit">
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-slate-100 dark:bg-slate-700 flex flex-col items-center justify-center flex-shrink-0">
+                  <span className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">{andar.numero}º</span>
+                  <span className="text-[8px] md:text-[10px] text-slate-500 uppercase">Nível</span>
+                </div>
+                <div className="flex gap-1 flex-1">
+                  {andar.unidades.map((unidade) => (
+                    <button
+                      key={unidade.id}
+                      onClick={() => handleUnidadeClick(unidade)}
+                      className={`
+                        flex-1 min-w-[80px] md:min-w-[100px] h-12 md:h-14 rounded-lg 
+                        text-white text-sm md:text-base font-bold
+                        transition-all transform hover:scale-[1.02] hover:shadow-lg
+                        ${statusColors[unidade.status]}
+                        ${selectedUnidade?.id === unidade.id ? 'ring-4 ring-primary-400 ring-offset-2' : ''}
+                      `}
+                      title={`${unidade.codigo} - ${statusLabels[unidade.status]}`}
+                    >
+                      {unidade.codigo}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       </div>
 
-      <Modal 
-        isOpen={showModal} 
-        onClose={() => setShowModal(false)} 
+      <div className="hidden lg:block w-80 flex-shrink-0">
+        {selectedUnidade ? (
+          <UnidadeDetailsPanel
+            unidade={selectedUnidade}
+            tipologias={tipologias}
+            onClose={handleCloseDetails}
+            onSave={handleSaveUnidade}
+            saving={saving}
+            formData={formData}
+            onFormChange={setFormData}
+          />
+        ) : (
+          <Card className="p-6 text-center">
+            <div className="text-slate-400 mb-4">
+              <Grid3X3 className="w-12 h-12 mx-auto" />
+            </div>
+            <p className="text-slate-500 dark:text-slate-400">
+              Selecione uma unidade para ver os detalhes
+            </p>
+          </Card>
+        )}
+      </div>
+
+      <BottomSheet 
+        isOpen={showMobileSheet && !!selectedUnidade} 
+        onClose={handleCloseDetails}
         title={`Unidade ${selectedUnidade?.codigo}`}
       >
         {selectedUnidade && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
-              <div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Andar</p>
-                <p className="font-medium text-slate-900 dark:text-white">{selectedUnidade.andar}º</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Posição</p>
-                <p className="font-medium text-slate-900 dark:text-white">{selectedUnidade.posicao}</p>
-              </div>
-              <div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Status Atual</p>
-                <Badge variant={
-                  selectedUnidade.status === 'DISPONIVEL' ? 'success' :
-                  selectedUnidade.status === 'RESERVADO' ? 'warning' :
-                  selectedUnidade.status === 'VENDIDO' ? 'danger' : 'default'
-                }>
-                  {statusLabels[selectedUnidade.status]}
-                </Badge>
-              </div>
-              {selectedUnidade.preco && (
-                <div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Preço</p>
-                  <p className="font-medium text-slate-900 dark:text-white">
-                    {formatCurrency(selectedUnidade.preco)}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <Select
-              label="Tipologia"
-              value={formData.tipologiaId}
-              onChange={(e) => {
-                const tipId = e.target.value
-                setFormData({ ...formData, tipologiaId: tipId })
-                if (tipId) {
-                  const tip = tipologias.find(t => t.id === parseInt(tipId))
-                  if (tip) {
-                    setFormData(prev => ({ ...prev, tipologiaId: tipId, preco: tip.precoBase.toString() }))
-                  }
-                }
-              }}
-              options={[
-                { value: '', label: 'Selecione uma tipologia' },
-                ...tipologias.map(t => ({ 
-                  value: t.id.toString(), 
-                  label: `${t.nome} - ${t.areaPrivativa}m² - ${formatCurrency(t.precoBase)}` 
-                }))
-              ]}
+          <div className="p-4">
+            <UnidadeDetailsPanel
+              unidade={selectedUnidade}
+              tipologias={tipologias}
+              onClose={handleCloseDetails}
+              onSave={handleSaveUnidade}
+              saving={saving}
+              formData={formData}
+              onFormChange={setFormData}
             />
-
-            <Select
-              label="Status"
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as StatusUnidade })}
-              options={[
-                { value: 'DISPONIVEL', label: 'Disponível' },
-                { value: 'RESERVADO', label: 'Reservado' },
-                { value: 'VENDIDO', label: 'Vendido' },
-                { value: 'BLOQUEADO', label: 'Bloqueado' },
-              ]}
-            />
-
-            <Input
-              label="Preço (R$)"
-              type="number"
-              value={formData.preco}
-              onChange={(e) => setFormData({ ...formData, preco: e.target.value })}
-              placeholder="Preço personalizado"
-            />
-
-            <Select
-              label="Posição Solar"
-              value={formData.posicaoSolar}
-              onChange={(e) => setFormData({ ...formData, posicaoSolar: e.target.value })}
-              options={[
-                { value: '', label: 'Não definida' },
-                { value: 'NASCENTE', label: 'Nascente' },
-                { value: 'POENTE', label: 'Poente' },
-                { value: 'NORTE', label: 'Norte' },
-                { value: 'SUL', label: 'Sul' },
-              ]}
-            />
-
-            <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveUnidade} loading={saving}>
-                Salvar Alterações
-              </Button>
-            </div>
           </div>
         )}
-      </Modal>
-    </Card>
+      </BottomSheet>
+    </div>
   )
 }

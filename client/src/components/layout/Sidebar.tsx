@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../stores/authStore'
+import { Drawer } from '../ui/Drawer'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
@@ -23,12 +24,20 @@ const navItems = [
   { to: '/financeiro', icon: Wallet, label: 'Financeiro' },
 ]
 
-export function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false)
+interface SidebarProps {
+  mobileOpen?: boolean
+  onMobileClose?: () => void
+}
+
+function SidebarContent({ collapsed, setCollapsed, onNavClick }: { 
+  collapsed: boolean
+  setCollapsed: (v: boolean) => void
+  onNavClick?: () => void 
+}) {
   const { logout, usuario } = useAuthStore()
 
   return (
-    <aside className={`${collapsed ? 'w-20' : 'w-64'} bg-slate-900 text-white flex flex-col transition-all duration-300`}>
+    <>
       <div className="p-4 flex items-center justify-between border-b border-slate-700">
         {!collapsed && (
           <div className="flex items-center gap-2">
@@ -48,7 +57,7 @@ export function Sidebar() {
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-1.5 hover:bg-slate-800 rounded-lg transition-colors"
+          className="p-1.5 hover:bg-slate-800 rounded-lg transition-colors hidden md:block"
         >
           {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
         </button>
@@ -59,8 +68,9 @@ export function Sidebar() {
           <NavLink
             key={item.to}
             to={item.to}
+            onClick={onNavClick}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+              `flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg transition-colors ${
                 isActive
                   ? 'bg-primary-600 text-white'
                   : 'text-slate-300 hover:bg-slate-800 hover:text-white'
@@ -68,7 +78,7 @@ export function Sidebar() {
             }
           >
             <item.icon className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
+            {!collapsed && <span className="text-base md:text-sm">{item.label}</span>}
           </NavLink>
         ))}
       </nav>
@@ -82,7 +92,7 @@ export function Sidebar() {
         )}
         <button
           onClick={logout}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors w-full ${
+          className={`flex items-center gap-3 px-3 py-3 md:py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition-colors w-full ${
             collapsed ? 'justify-center' : ''
           }`}
         >
@@ -90,6 +100,31 @@ export function Sidebar() {
           {!collapsed && <span>Sair</span>}
         </button>
       </div>
-    </aside>
+    </>
+  )
+}
+
+export function Sidebar({ mobileOpen = false, onMobileClose }: SidebarProps) {
+  const [collapsed, setCollapsed] = useState(false)
+
+  return (
+    <>
+      <aside className={`${collapsed ? 'w-20' : 'w-64'} bg-slate-900 text-white flex-col transition-all duration-300 hidden md:flex`}>
+        <SidebarContent 
+          collapsed={collapsed} 
+          setCollapsed={setCollapsed} 
+        />
+      </aside>
+
+      <Drawer isOpen={mobileOpen} onClose={onMobileClose || (() => {})} side="left">
+        <div className="flex flex-col h-full text-white pt-12">
+          <SidebarContent 
+            collapsed={false} 
+            setCollapsed={() => {}} 
+            onNavClick={onMobileClose}
+          />
+        </div>
+      </Drawer>
+    </>
   )
 }
