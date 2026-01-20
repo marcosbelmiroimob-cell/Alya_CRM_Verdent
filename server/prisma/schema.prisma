@@ -1,0 +1,204 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plano {
+  TRIAL
+  BASICO
+  PROFISSIONAL
+  PREMIUM
+}
+
+enum TipoNegocio {
+  LANCAMENTO
+  TERCEIROS
+}
+
+enum EtapaKanban {
+  NOVO_LEAD
+  PRIMEIRO_CONTATO
+  QUALIFICADO
+  VISITA_AGENDADA
+  PROPOSTA_ENVIADA
+  FECHAMENTO
+  VENDIDO
+  PERDIDO
+}
+
+enum TipoTransacao {
+  RECEITA
+  DESPESA
+}
+
+enum StatusTransacao {
+  PENDENTE
+  PAGO
+  ATRASADO
+  CANCELADO
+}
+
+enum TipoAgente {
+  ALYA_COACH
+  GERADOR_MENSAGEM
+  QUALIFICADOR
+}
+
+enum TipoAtividade {
+  LIGACAO
+  WHATSAPP
+  EMAIL
+  VISITA
+  REUNIAO
+  PROPOSTA
+  OUTRO
+}
+
+model Usuario {
+  id           Int      @id @default(autoincrement())
+  nome         String   @db.VarChar(255)
+  email        String   @unique @db.VarChar(255)
+  senhaHash    String   @map("senha_hash") @db.VarChar(255)
+  telefone     String?  @db.VarChar(20)
+  creci        String?  @db.VarChar(50)
+  plano        Plano    @default(TRIAL)
+  avatar       String?  @db.VarChar(500)
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  leads       Lead[]
+  imoveis     Imovel[]
+  negociacoes Negociacao[]
+  transacoes  TransacaoFinanceira[]
+
+  @@map("usuarios")
+}
+
+model Lead {
+  id                Int      @id @default(autoincrement())
+  usuarioId         Int      @map("usuario_id")
+  nome              String   @db.VarChar(255)
+  telefone          String?  @db.VarChar(20)
+  email             String?  @db.VarChar(255)
+  origem            String?  @db.VarChar(100)
+  perfilComprador   Json?    @map("perfil_comprador")
+  scoreQualificacao Int      @default(0) @map("score_qualificacao")
+  observacoes       String?  @db.Text
+  criadoEm          DateTime @default(now()) @map("criado_em")
+  atualizadoEm      DateTime @updatedAt @map("atualizado_em")
+
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  negociacoes Negociacao[]
+
+  @@index([usuarioId])
+  @@map("leads")
+}
+
+model Imovel {
+  id                 Int         @id @default(autoincrement())
+  usuarioId          Int         @map("usuario_id")
+  tipoNegocio        TipoNegocio @map("tipo_negocio")
+  titulo             String      @db.VarChar(255)
+  descricao          String?     @db.Text
+  valor              Decimal     @db.Decimal(15, 2)
+  comissaoPercentual Decimal     @map("comissao_percentual") @db.Decimal(5, 2)
+  endereco           String?     @db.VarChar(500)
+  cidade             String?     @db.VarChar(100)
+  bairro             String?     @db.VarChar(100)
+  caracteristicas    Json?
+  fotos              Json?
+  construtora        String?     @db.VarChar(255)
+  nomeProprietario   String?     @map("nome_proprietario") @db.VarChar(255)
+  telefoneProprietario String?   @map("telefone_proprietario") @db.VarChar(20)
+  ativo              Boolean     @default(true)
+  criadoEm           DateTime    @default(now()) @map("criado_em")
+  atualizadoEm       DateTime    @updatedAt @map("atualizado_em")
+
+  usuario     Usuario      @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  negociacoes Negociacao[]
+
+  @@index([usuarioId])
+  @@index([tipoNegocio])
+  @@map("imoveis")
+}
+
+model Negociacao {
+  id              Int          @id @default(autoincrement())
+  usuarioId       Int          @map("usuario_id")
+  leadId          Int          @map("lead_id")
+  imovelId        Int?         @map("imovel_id")
+  etapaKanban     EtapaKanban  @default(NOVO_LEAD) @map("etapa_kanban")
+  valorProposta   Decimal?     @map("valor_proposta") @db.Decimal(15, 2)
+  observacoes     String?      @db.Text
+  proximoContato  DateTime?    @map("proximo_contato")
+  ordem           Int          @default(0)
+  criadoEm        DateTime     @default(now()) @map("criado_em")
+  atualizadoEm    DateTime     @updatedAt @map("atualizado_em")
+
+  usuario     Usuario       @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  lead        Lead          @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  imovel      Imovel?       @relation(fields: [imovelId], references: [id], onDelete: SetNull)
+  historicosIA HistoricoIA[]
+  atividades  Atividade[]
+  transacoes  TransacaoFinanceira[]
+
+  @@index([usuarioId])
+  @@index([etapaKanban])
+  @@map("negociacoes")
+}
+
+model TransacaoFinanceira {
+  id             Int             @id @default(autoincrement())
+  usuarioId      Int             @map("usuario_id")
+  negociacaoId   Int?            @map("negociacao_id")
+  tipo           TipoTransacao
+  categoria      String          @db.VarChar(100)
+  descricao      String?         @db.VarChar(255)
+  valor          Decimal         @db.Decimal(15, 2)
+  dataVencimento DateTime?       @map("data_vencimento") @db.Date
+  dataPagamento  DateTime?       @map("data_pagamento") @db.Date
+  status         StatusTransacao @default(PENDENTE)
+  recorrente     Boolean         @default(false)
+  criadoEm       DateTime        @default(now()) @map("criado_em")
+
+  usuario    Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  negociacao Negociacao? @relation(fields: [negociacaoId], references: [id], onDelete: SetNull)
+
+  @@index([usuarioId])
+  @@index([tipo])
+  @@index([status])
+  @@map("transacoes_financeiras")
+}
+
+model HistoricoIA {
+  id           Int        @id @default(autoincrement())
+  negociacaoId Int        @map("negociacao_id")
+  tipoAgente   TipoAgente @map("tipo_agente")
+  prompt       String     @db.Text
+  resposta     String     @db.Text
+  criadoEm     DateTime   @default(now()) @map("criado_em")
+
+  negociacao Negociacao @relation(fields: [negociacaoId], references: [id], onDelete: Cascade)
+
+  @@index([negociacaoId])
+  @@map("historicos_ia")
+}
+
+model Atividade {
+  id           Int           @id @default(autoincrement())
+  negociacaoId Int           @map("negociacao_id")
+  tipo         TipoAtividade
+  descricao    String        @db.Text
+  dataAtividade DateTime     @map("data_atividade")
+  concluida    Boolean       @default(false)
+  criadoEm     DateTime      @default(now()) @map("criado_em")
+
+  negociacao Negociacao @relation(fields: [negociacaoId], references: [id], onDelete: Cascade)
+
+  @@index([negociacaoId])
+  @@map("atividades")
+}
