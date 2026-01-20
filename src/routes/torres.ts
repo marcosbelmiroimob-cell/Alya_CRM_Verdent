@@ -156,9 +156,20 @@ export async function torreRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: 'Torre não encontrada' })
     }
 
-    const grid: Record<number, any[]> = {}
+    const andares = []
     for (let andar = torre.totalAndares; andar >= 1; andar--) {
-      grid[andar] = torre.unidades.filter(u => u.andar === andar)
+      andares.push({
+        numero: andar,
+        unidades: torre.unidades.filter((u: any) => u.andar === andar),
+      })
+    }
+
+    const estatisticas = {
+      total: torre.unidades.length,
+      disponiveis: torre.unidades.filter((u: any) => u.status === 'DISPONIVEL').length,
+      reservados: torre.unidades.filter((u: any) => u.status === 'RESERVADO').length,
+      vendidos: torre.unidades.filter((u: any) => u.status === 'VENDIDO').length,
+      bloqueados: torre.unidades.filter((u: any) => u.status === 'BLOQUEADO').length,
     }
 
     return reply.send({
@@ -168,11 +179,8 @@ export async function torreRoutes(fastify: FastifyInstance) {
         totalAndares: torre.totalAndares,
         unidadesPorAndar: torre.unidadesPorAndar,
       },
-      empreendimento: {
-        id: torre.empreendimento.id,
-        nome: torre.empreendimento.nome,
-      },
-      grid,
+      andares,
+      estatisticas,
     })
   })
 
