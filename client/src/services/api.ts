@@ -92,6 +92,7 @@ export const atividadeService = {
 export const dashboardService = {
   resumo: () => api.get('/dashboard/resumo'),
   pipelineValores: () => api.get('/dashboard/pipeline-valores'),
+  resumoCompleto: () => api.get('/dashboard/resumo-completo'),
 }
 
 export const empreendimentoService = {

@@ -260,3 +260,32 @@ export interface TorreGrid {
     bloqueados: number
   }
 }
+
+export interface DashboardResumo {
+  periodo: { inicio: string; fim: string }
+  novosLeads: { valor: number; variacao: number }
+  vendasRealizadas: { valor: number; variacao: number }
+  taxaConversao: { valor: number; variacao: number }
+  vgvTotal: { valor: number; variacao: number }
+  cicloMedioVendas: { valor: number; variacao: number }
+  funil: {
+    etapa: string
+    nome: string
+    quantidade: number
+    tempoMedioDias: number
+    taxaConversao: number
+    cor: string
+  }[]
+  vgvSemanal: {
+    semana: string
+    valor: number
+  }[]
+  proximasAtividades: {
+    id: number
+    tipo: string
+    descricao: string
+    dataAtividade: string
+    leadNome: string
+    urgencia: 'hoje' | 'amanha' | 'semana' | 'futuro'
+  }[]
+}

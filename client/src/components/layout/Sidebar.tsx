@@ -15,12 +15,12 @@ import { useState } from 'react'
 import { useAuthStore } from '../../stores/authStore'
 
 const navItems = [
-  { to: '/', icon: Kanban, label: 'Pipeline' },
+  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/pipeline', icon: Kanban, label: 'Pipeline' },
   { to: '/leads', icon: Users, label: 'Leads' },
   { to: '/empreendimentos', icon: Landmark, label: 'Lançamentos' },
   { to: '/imoveis-usados', icon: Home, label: 'Usados' },
   { to: '/financeiro', icon: Wallet, label: 'Financeiro' },
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
 ]
 
 export function Sidebar() {

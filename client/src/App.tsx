@@ -29,14 +29,14 @@ export default function App() {
         <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
         <Route path="/registro" element={<PublicRoute><RegistroPage /></PublicRoute>} />
         <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
-          <Route index element={<KanbanPage />} />
+          <Route index element={<DashboardPage />} />
+          <Route path="pipeline" element={<KanbanPage />} />
           <Route path="leads" element={<LeadsPage />} />
           <Route path="imoveis" element={<ImoveisPage />} />
           <Route path="empreendimentos" element={<EmpreendimentosPage />} />
           <Route path="empreendimentos/:id" element={<EmpreendimentoDetailPage />} />
           <Route path="imoveis-usados" element={<ImoveisUsadosPage />} />
           <Route path="financeiro" element={<FinanceiroPage />} />
-          <Route path="dashboard" element={<DashboardPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
