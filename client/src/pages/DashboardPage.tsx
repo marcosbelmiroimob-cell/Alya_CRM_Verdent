@@ -1,14 +1,28 @@
 import { useEffect, useState } from 'react'
-import { Card } from '../components/ui/Card'
-import { Badge } from '../components/ui/Badge'
 import { 
-  TrendingUp, 
-  TrendingDown, 
+  Card, 
+  Metric, 
+  Text, 
+  Flex, 
+  BadgeDelta, 
+  Grid, 
+  Title, 
+  DonutChart, 
+  AreaChart,
+  Legend,
+  ProgressBar,
+  TabGroup,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+} from '@tremor/react'
+import { 
   Users, 
-  DollarSign, 
+  ShoppingCart, 
   Target, 
+  DollarSign, 
   Clock, 
-  ShoppingCart,
   Calendar,
   Phone,
   Mail,
@@ -16,53 +30,6 @@ import {
 } from 'lucide-react'
 import { dashboardService } from '../services/api'
 import { DashboardResumo } from '../types'
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer 
-} from 'recharts'
-
-interface KPICardProps {
-  title: string
-  value: string | number
-  variacao: number
-  icon: React.ReactNode
-  isCurrency?: boolean
-  isDays?: boolean
-  inverseVariation?: boolean
-}
-
-function KPICard({ title, value, variacao, icon, isCurrency, isDays, inverseVariation }: KPICardProps) {
-  const isPositive = inverseVariation ? variacao <= 0 : variacao >= 0
-  const showArrow = variacao !== 0
-  
-  return (
-    <Card className="relative overflow-hidden">
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">
-            {isCurrency ? formatCurrency(Number(value)) : isDays ? `${value} dias` : value}
-          </p>
-          {showArrow && (
-            <div className={`flex items-center gap-1 mt-2 text-sm font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
-              {isPositive ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
-              <span>{isPositive ? '+' : ''}{variacao}%</span>
-              <span className="text-slate-400 text-xs ml-1">vs mês anterior</span>
-            </div>
-          )}
-        </div>
-        <div className="p-3 bg-primary-100 dark:bg-primary-900/30 rounded-xl">
-          {icon}
-        </div>
-      </div>
-    </Card>
-  )
-}
 
 function formatCurrency(value: number): string {
   if (value >= 1000000) {
@@ -78,18 +45,18 @@ function formatCurrencyFull(value: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 }
 
-const urgencyColors: Record<string, { bg: string; text: string; label: string }> = {
-  hoje: { bg: 'bg-red-100 dark:bg-red-900/30', text: 'text-red-600 dark:text-red-400', label: 'Hoje' },
-  amanha: { bg: 'bg-yellow-100 dark:bg-yellow-900/30', text: 'text-yellow-600 dark:text-yellow-400', label: 'Amanhã' },
-  semana: { bg: 'bg-blue-100 dark:bg-blue-900/30', text: 'text-blue-600 dark:text-blue-400', label: 'Esta semana' },
-  futuro: { bg: 'bg-slate-100 dark:bg-slate-700', text: 'text-slate-600 dark:text-slate-400', label: 'Futuro' },
+const urgencyColors: Record<string, string> = {
+  hoje: 'rose',
+  amanha: 'amber',
+  semana: 'blue',
+  futuro: 'slate',
 }
 
-const tipoIcons: Record<string, React.ReactNode> = {
-  LIGACAO: <Phone className="w-4 h-4" />,
-  EMAIL: <Mail className="w-4 h-4" />,
-  VISITA: <MapPin className="w-4 h-4" />,
-  REUNIAO: <Calendar className="w-4 h-4" />,
+const urgencyLabels: Record<string, string> = {
+  hoje: 'Hoje',
+  amanha: 'Amanhã',
+  semana: 'Esta semana',
+  futuro: 'Futuro',
 }
 
 export function DashboardPage() {
@@ -111,210 +78,281 @@ export function DashboardPage() {
     }
   }
 
-  const maxFunilQtd = data?.funil ? Math.max(...data.funil.map(f => f.quantidade)) : 1
+  if (loading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
+      </div>
+    )
+  }
+
+  if (!data) {
+    return (
+      <Card className="text-center py-12">
+        <Text>Erro ao carregar dados do dashboard</Text>
+      </Card>
+    )
+  }
+
+  const funilDonutData = data.funil
+    .filter(f => f.etapa !== 'VENDIDO')
+    .map(f => ({
+      name: f.nome,
+      value: f.quantidade,
+    }))
+
+  const vgvChartData = data.vgvSemanal.map(s => ({
+    semana: s.semana,
+    VGV: s.valor,
+  }))
+
+  const totalFunil = data.funil.reduce((acc, f) => acc + f.quantidade, 0)
 
   return (
-    <div>
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Dashboard</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">
-            Exibindo dados do mês atual
-          </p>
-        </div>
+    <div className="space-y-6">
+      <div>
+        <Title>Dashboard</Title>
+        <Text>Exibindo dados do mês atual</Text>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600" />
-        </div>
-      ) : data ? (
-        <>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-6">
-            <KPICard
-              title="Novos Leads"
-              value={data.novosLeads.valor}
-              variacao={data.novosLeads.variacao}
-              icon={<Users className="w-6 h-6 text-primary-600" />}
-            />
-            <KPICard
-              title="Vendas Realizadas"
-              value={data.vendasRealizadas.valor}
-              variacao={data.vendasRealizadas.variacao}
-              icon={<ShoppingCart className="w-6 h-6 text-primary-600" />}
-            />
-            <KPICard
-              title="Taxa de Conversão"
-              value={`${data.taxaConversao.valor}%`}
-              variacao={data.taxaConversao.variacao}
-              icon={<Target className="w-6 h-6 text-primary-600" />}
-            />
-            <KPICard
-              title="VGV Total"
-              value={data.vgvTotal.valor}
-              variacao={data.vgvTotal.variacao}
-              icon={<DollarSign className="w-6 h-6 text-primary-600" />}
-              isCurrency
-            />
-            <KPICard
-              title="Ciclo Médio"
-              value={data.cicloMedioVendas.valor}
-              variacao={data.cicloMedioVendas.variacao}
-              icon={<Clock className="w-6 h-6 text-primary-600" />}
-              isDays
-              inverseVariation
-            />
-          </div>
-
-          <div className="grid gap-6 lg:grid-cols-2 mb-6">
-            <Card>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                Funil de Vendas
-              </h2>
-              <div className="space-y-3">
-                {data.funil.map((etapa) => (
-                  <div key={etapa.etapa} className="space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium text-slate-700 dark:text-slate-300">
-                        {etapa.nome}
-                      </span>
-                      <div className="flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                        <span className="text-xs">{etapa.tempoMedioDias}d</span>
-                        {etapa.etapa !== 'VENDIDO' && (
-                          <span className="text-xs">{etapa.taxaConversao}%</span>
-                        )}
-                        <span className="font-semibold text-slate-900 dark:text-white w-8 text-right">
-                          {etapa.quantidade}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="h-8 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden">
-                      <div
-                        className="h-full rounded-lg transition-all duration-500 flex items-center justify-end pr-3"
-                        style={{
-                          width: `${Math.max((etapa.quantidade / maxFunilQtd) * 100, 5)}%`,
-                          backgroundColor: etapa.cor,
-                        }}
-                      >
-                        {etapa.quantidade > 0 && (
-                          <span className="text-white text-xs font-medium">
-                            {etapa.quantidade}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
-
-            <Card>
-              <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-                VGV Semanal
-              </h2>
-              {data.vgvSemanal.some(s => s.valor > 0) ? (
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data.vgvSemanal}>
-                      <defs>
-                        <linearGradient id="colorVgv" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
-                      <XAxis 
-                        dataKey="semana" 
-                        tick={{ fontSize: 12 }}
-                        className="text-slate-500"
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
-                        className="text-slate-500"
-                      />
-                      <Tooltip 
-                        formatter={(value: number) => [formatCurrencyFull(value), 'VGV']}
-                        contentStyle={{
-                          backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                          border: '1px solid #e2e8f0',
-                          borderRadius: '8px',
-                        }}
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="valor" 
-                        stroke="#8b5cf6" 
-                        strokeWidth={2}
-                        fillOpacity={1}
-                        fill="url(#colorVgv)" 
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-              ) : (
-                <div className="h-64 flex items-center justify-center text-slate-400">
-                  <div className="text-center">
-                    <DollarSign className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                    <p>Nenhuma venda nas últimas semanas</p>
-                  </div>
-                </div>
-              )}
-            </Card>
-          </div>
-
-          <Card>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
-              Próximas Atividades
-            </h2>
-            <div className="space-y-3">
-              {data.proximasAtividades.length > 0 ? (
-                data.proximasAtividades.map((atividade) => {
-                  const urgency = urgencyColors[atividade.urgencia]
-                  return (
-                    <div
-                      key={atividade.id}
-                      className={`flex items-center gap-3 p-3 rounded-lg ${urgency.bg}`}
-                    >
-                      <div className={`p-2 rounded-full bg-white dark:bg-slate-800 ${urgency.text}`}>
-                        {tipoIcons[atividade.tipo] || <Calendar className="w-4 h-4" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-slate-900 dark:text-white truncate">
-                            {atividade.leadNome}
-                          </span>
-                          <Badge size="sm">{atividade.tipo}</Badge>
-                        </div>
-                        <p className="text-sm text-slate-600 dark:text-slate-400 truncate">
-                          {atividade.descricao}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <span className={`text-sm font-medium ${urgency.text}`}>
-                          {urgency.label}
-                        </span>
-                        <p className="text-xs text-slate-500">
-                          {new Date(atividade.dataAtividade).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                    </div>
-                  )
-                })
-              ) : (
-                <div className="text-center py-8 text-slate-400">
-                  <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                  <p>Nenhuma atividade pendente</p>
-                </div>
-              )}
+      <Grid numItemsSm={2} numItemsLg={5} className="gap-4">
+        <Card decoration="top" decorationColor="blue">
+          <Flex justifyContent="between" alignItems="center">
+            <div>
+              <Text>Novos Leads</Text>
+              <Metric>{data.novosLeads.valor}</Metric>
             </div>
-          </Card>
-        </>
-      ) : (
-        <div className="text-center py-12 text-slate-500">
-          Erro ao carregar dados do dashboard
-        </div>
-      )}
+            <BadgeDelta 
+              deltaType={data.novosLeads.variacao >= 0 ? 'increase' : 'decrease'}
+              size="sm"
+            >
+              {data.novosLeads.variacao >= 0 ? '+' : ''}{data.novosLeads.variacao}%
+            </BadgeDelta>
+          </Flex>
+          <Flex justifyContent="start" className="mt-2">
+            <Users className="w-5 h-5 text-blue-500 mr-2" />
+            <Text className="text-xs">vs mês anterior</Text>
+          </Flex>
+        </Card>
+
+        <Card decoration="top" decorationColor="emerald">
+          <Flex justifyContent="between" alignItems="center">
+            <div>
+              <Text>Vendas Realizadas</Text>
+              <Metric>{data.vendasRealizadas.valor}</Metric>
+            </div>
+            <BadgeDelta 
+              deltaType={data.vendasRealizadas.variacao >= 0 ? 'increase' : 'decrease'}
+              size="sm"
+            >
+              {data.vendasRealizadas.variacao >= 0 ? '+' : ''}{data.vendasRealizadas.variacao}%
+            </BadgeDelta>
+          </Flex>
+          <Flex justifyContent="start" className="mt-2">
+            <ShoppingCart className="w-5 h-5 text-emerald-500 mr-2" />
+            <Text className="text-xs">vs mês anterior</Text>
+          </Flex>
+        </Card>
+
+        <Card decoration="top" decorationColor="violet">
+          <Flex justifyContent="between" alignItems="center">
+            <div>
+              <Text>Taxa de Conversão</Text>
+              <Metric>{data.taxaConversao.valor}%</Metric>
+            </div>
+            <BadgeDelta 
+              deltaType={data.taxaConversao.variacao >= 0 ? 'increase' : 'decrease'}
+              size="sm"
+            >
+              {data.taxaConversao.variacao >= 0 ? '+' : ''}{data.taxaConversao.variacao}%
+            </BadgeDelta>
+          </Flex>
+          <Flex justifyContent="start" className="mt-2">
+            <Target className="w-5 h-5 text-violet-500 mr-2" />
+            <Text className="text-xs">vs mês anterior</Text>
+          </Flex>
+        </Card>
+
+        <Card decoration="top" decorationColor="amber">
+          <Flex justifyContent="between" alignItems="center">
+            <div>
+              <Text>VGV Total</Text>
+              <Metric>{formatCurrency(data.vgvTotal.valor)}</Metric>
+            </div>
+            <BadgeDelta 
+              deltaType={data.vgvTotal.variacao >= 0 ? 'increase' : 'decrease'}
+              size="sm"
+            >
+              {data.vgvTotal.variacao >= 0 ? '+' : ''}{data.vgvTotal.variacao}%
+            </BadgeDelta>
+          </Flex>
+          <Flex justifyContent="start" className="mt-2">
+            <DollarSign className="w-5 h-5 text-amber-500 mr-2" />
+            <Text className="text-xs">vs mês anterior</Text>
+          </Flex>
+        </Card>
+
+        <Card decoration="top" decorationColor="rose">
+          <Flex justifyContent="between" alignItems="center">
+            <div>
+              <Text>Ciclo Médio</Text>
+              <Metric>{data.cicloMedioVendas.valor} dias</Metric>
+            </div>
+            <BadgeDelta 
+              deltaType={data.cicloMedioVendas.variacao <= 0 ? 'increase' : 'decrease'}
+              size="sm"
+            >
+              {data.cicloMedioVendas.variacao > 0 ? '+' : ''}{data.cicloMedioVendas.variacao}d
+            </BadgeDelta>
+          </Flex>
+          <Flex justifyContent="start" className="mt-2">
+            <Clock className="w-5 h-5 text-rose-500 mr-2" />
+            <Text className="text-xs">vs mês anterior</Text>
+          </Flex>
+        </Card>
+      </Grid>
+
+      <Grid numItemsSm={1} numItemsLg={2} className="gap-6">
+        <Card>
+          <Title>Funil de Vendas</Title>
+          <Text className="mb-4">Distribuição de negociações por etapa</Text>
+          
+          <TabGroup>
+            <TabList className="mb-4">
+              <Tab>Barras</Tab>
+              <Tab>Donut</Tab>
+            </TabList>
+            <TabPanels>
+              <TabPanel>
+                <div className="space-y-4">
+                  {data.funil.map((etapa) => (
+                    <div key={etapa.etapa}>
+                      <Flex>
+                        <Text>{etapa.nome}</Text>
+                        <Flex justifyContent="end" className="gap-4">
+                          <Text className="text-xs text-gray-500">{etapa.tempoMedioDias}d</Text>
+                          {etapa.etapa !== 'VENDIDO' && (
+                            <Text className="text-xs text-gray-500">{etapa.taxaConversao}%</Text>
+                          )}
+                          <Text className="font-semibold">{etapa.quantidade}</Text>
+                        </Flex>
+                      </Flex>
+                      <ProgressBar 
+                        value={totalFunil > 0 ? (etapa.quantidade / totalFunil) * 100 : 0}
+                        color={
+                          etapa.etapa === 'VENDIDO' ? 'emerald' :
+                          etapa.etapa === 'FECHAMENTO' ? 'violet' :
+                          etapa.etapa === 'PROPOSTA_ENVIADA' ? 'orange' :
+                          etapa.etapa === 'VISITA_AGENDADA' ? 'yellow' :
+                          etapa.etapa === 'QUALIFICADO' ? 'cyan' :
+                          etapa.etapa === 'PRIMEIRO_CONTATO' ? 'blue' : 'gray'
+                        }
+                        className="mt-2"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </TabPanel>
+              <TabPanel>
+                <DonutChart
+                  data={funilDonutData}
+                  category="value"
+                  index="name"
+                  colors={['slate', 'blue', 'cyan', 'yellow', 'orange', 'violet']}
+                  className="h-60"
+                  showAnimation
+                />
+                <Legend
+                  categories={funilDonutData.map(d => d.name)}
+                  colors={['slate', 'blue', 'cyan', 'yellow', 'orange', 'violet']}
+                  className="mt-4 justify-center"
+                />
+              </TabPanel>
+            </TabPanels>
+          </TabGroup>
+        </Card>
+
+        <Card>
+          <Title>VGV Semanal</Title>
+          <Text className="mb-4">Valor Geral de Vendas das últimas 4 semanas</Text>
+          
+          {data.vgvSemanal.some(s => s.valor > 0) ? (
+            <AreaChart
+              data={vgvChartData}
+              index="semana"
+              categories={['VGV']}
+              colors={['violet']}
+              valueFormatter={formatCurrencyFull}
+              className="h-60"
+              showAnimation
+              showLegend={false}
+              curveType="monotone"
+            />
+          ) : (
+            <div className="h-60 flex items-center justify-center text-gray-400">
+              <div className="text-center">
+                <DollarSign className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <Text>Nenhuma venda nas últimas semanas</Text>
+              </div>
+            </div>
+          )}
+        </Card>
+      </Grid>
+
+      <Card>
+        <Title>Próximas Atividades</Title>
+        <Text className="mb-4">Atividades pendentes ordenadas por urgência</Text>
+        
+        {data.proximasAtividades.length > 0 ? (
+          <div className="space-y-3">
+            {data.proximasAtividades.map((atividade) => (
+              <div
+                key={atividade.id}
+                className={`flex items-center gap-3 p-3 rounded-lg border-l-4 bg-${urgencyColors[atividade.urgencia]}-50 border-${urgencyColors[atividade.urgencia]}-500`}
+                style={{
+                  backgroundColor: atividade.urgencia === 'hoje' ? '#fef2f2' : 
+                                   atividade.urgencia === 'amanha' ? '#fffbeb' :
+                                   atividade.urgencia === 'semana' ? '#eff6ff' : '#f8fafc',
+                  borderLeftColor: atividade.urgencia === 'hoje' ? '#ef4444' :
+                                   atividade.urgencia === 'amanha' ? '#f59e0b' :
+                                   atividade.urgencia === 'semana' ? '#3b82f6' : '#64748b',
+                }}
+              >
+                <div className="p-2 rounded-full bg-white">
+                  {atividade.tipo === 'LIGACAO' ? <Phone className="w-4 h-4" style={{ color: atividade.urgencia === 'hoje' ? '#ef4444' : atividade.urgencia === 'amanha' ? '#f59e0b' : '#3b82f6' }} /> :
+                   atividade.tipo === 'EMAIL' ? <Mail className="w-4 h-4" style={{ color: atividade.urgencia === 'hoje' ? '#ef4444' : atividade.urgencia === 'amanha' ? '#f59e0b' : '#3b82f6' }} /> :
+                   atividade.tipo === 'VISITA' ? <MapPin className="w-4 h-4" style={{ color: atividade.urgencia === 'hoje' ? '#ef4444' : atividade.urgencia === 'amanha' ? '#f59e0b' : '#3b82f6' }} /> :
+                   <Calendar className="w-4 h-4" style={{ color: atividade.urgencia === 'hoje' ? '#ef4444' : atividade.urgencia === 'amanha' ? '#f59e0b' : '#3b82f6' }} />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <Flex>
+                    <Text className="font-medium truncate">{atividade.leadNome}</Text>
+                    <Text className="text-xs px-2 py-0.5 rounded bg-gray-100">{atividade.tipo}</Text>
+                  </Flex>
+                  <Text className="text-sm text-gray-600 truncate">{atividade.descricao}</Text>
+                </div>
+                <div className="text-right">
+                  <Text className="text-sm font-medium" style={{ 
+                    color: atividade.urgencia === 'hoje' ? '#ef4444' : 
+                           atividade.urgencia === 'amanha' ? '#f59e0b' : 
+                           atividade.urgencia === 'semana' ? '#3b82f6' : '#64748b' 
+                  }}>
+                    {urgencyLabels[atividade.urgencia]}
+                  </Text>
+                  <Text className="text-xs text-gray-500">
+                    {new Date(atividade.dataAtividade).toLocaleDateString('pt-BR')}
+                  </Text>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-gray-400">
+            <Calendar className="w-12 h-12 mx-auto mb-2 opacity-50" />
+            <Text>Nenhuma atividade pendente</Text>
+          </div>
+        )}
+      </Card>
     </div>
   )
 }
