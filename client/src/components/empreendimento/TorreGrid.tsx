@@ -17,8 +17,15 @@ interface TorreGridProps {
 const statusColors: Record<StatusUnidade, string> = {
   DISPONIVEL: 'bg-emerald-500 hover:bg-emerald-600',
   RESERVADO: 'bg-amber-500 hover:bg-amber-600',
-  VENDIDO: 'bg-red-500 hover:bg-red-600',
+  VENDIDO: 'bg-rose-500 hover:bg-rose-600',
   BLOQUEADO: 'bg-slate-400 hover:bg-slate-500',
+}
+
+const statusBorderColors: Record<StatusUnidade, string> = {
+  DISPONIVEL: 'border-emerald-500',
+  RESERVADO: 'border-amber-500',
+  VENDIDO: 'border-rose-500',
+  BLOQUEADO: 'border-slate-400',
 }
 
 const statusLabels: Record<StatusUnidade, string> = {
@@ -110,83 +117,79 @@ export function TorreGrid({ torreId, tipologias, onUpdate }: TorreGridProps) {
     )
   }
 
+  const unidadesPorAndar = gridData.torre.unidadesPorAndar || gridData.andares[0]?.unidades.length || 4
+
   return (
-    <Card>
-      <div className="flex items-center justify-between mb-4">
+    <Card className="p-6">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="font-semibold text-slate-900 dark:text-white">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-white">
             {gridData.torre.nome}
           </h3>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {gridData.estatisticas.total} unidades • {gridData.estatisticas.disponiveis} disponíveis
           </p>
         </div>
-        <div className="flex gap-2">
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-emerald-500" />
-            <span className="text-xs text-slate-600 dark:text-slate-400">{gridData.estatisticas.disponiveis}</span>
+        <div className="flex gap-3">
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded bg-emerald-500" />
+            <span className="text-sm text-slate-600 dark:text-slate-400">{gridData.estatisticas.disponiveis}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-amber-500" />
-            <span className="text-xs text-slate-600 dark:text-slate-400">{gridData.estatisticas.reservados}</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded bg-amber-500" />
+            <span className="text-sm text-slate-600 dark:text-slate-400">{gridData.estatisticas.reservados}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-red-500" />
-            <span className="text-xs text-slate-600 dark:text-slate-400">{gridData.estatisticas.vendidos}</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded bg-rose-500" />
+            <span className="text-sm text-slate-600 dark:text-slate-400">{gridData.estatisticas.vendidos}</span>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-3 h-3 rounded bg-slate-400" />
-            <span className="text-xs text-slate-600 dark:text-slate-400">{gridData.estatisticas.bloqueados}</span>
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded bg-slate-400" />
+            <span className="text-sm text-slate-600 dark:text-slate-400">{gridData.estatisticas.bloqueados}</span>
           </div>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th className="text-left text-xs font-medium text-slate-500 dark:text-slate-400 pb-2 w-16">
-                Andar
-              </th>
-              {gridData.andares[0]?.unidades.map((_, i) => (
-                <th key={i} className="text-center text-xs font-medium text-slate-500 dark:text-slate-400 pb-2">
-                  {String.fromCharCode(65 + i)}
-                </th>
+      <div className="flex justify-center">
+        <div className="inline-block">
+          <div 
+            className="border-4 border-slate-800 dark:border-slate-300 rounded-t-[40px] rounded-b-lg p-3 bg-white dark:bg-slate-900"
+            style={{ minWidth: `${unidadesPorAndar * 56 + 24}px` }}
+          >
+            <div className="space-y-1">
+              {gridData.andares.map((andar) => (
+                <div key={andar.numero} className="flex items-center gap-2">
+                  <span className="w-8 text-xs font-medium text-slate-500 dark:text-slate-400 text-right">
+                    {andar.numero}º
+                  </span>
+                  <div className="flex gap-1">
+                    {andar.unidades.map((unidade) => (
+                      <button
+                        key={unidade.id}
+                        onClick={() => handleUnidadeClick(unidade)}
+                        className={`
+                          w-12 h-10 rounded border-2 text-white text-[10px] font-bold
+                          transition-all transform hover:scale-110 hover:shadow-lg hover:z-10
+                          ${statusColors[unidade.status]}
+                          ${statusBorderColors[unidade.status]}
+                        `}
+                        title={`${unidade.codigo} - ${statusLabels[unidade.status]}${unidade.tipologia ? ` - ${unidade.tipologia.nome}` : ''}`}
+                      >
+                        {unidade.codigo}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {gridData.andares.map((andar) => (
-              <tr key={andar.numero}>
-                <td className="text-sm font-medium text-slate-600 dark:text-slate-400 py-1 pr-2">
-                  {andar.numero}º
-                </td>
-                {andar.unidades.map((unidade) => (
-                  <td key={unidade.id} className="p-1">
-                    <button
-                      onClick={() => handleUnidadeClick(unidade)}
-                      className={`
-                        w-16 h-12 rounded-lg text-white text-xs font-medium
-                        transition-all transform hover:scale-105 hover:shadow-lg
-                        ${statusColors[unidade.status]}
-                      `}
-                      title={`${unidade.codigo} - ${statusLabels[unidade.status]}${unidade.tipologia ? ` - ${unidade.tipologia.nome}` : ''}`}
-                    >
-                      <div className="flex flex-col items-center justify-center h-full">
-                        <span className="font-bold">{unidade.codigo}</span>
-                        {unidade.tipologia && (
-                          <span className="text-[10px] opacity-80 truncate max-w-full px-1">
-                            {unidade.tipologia.nome}
-                          </span>
-                        )}
-                      </div>
-                    </button>
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+            </div>
+          </div>
+          
+          <div className="flex justify-center mt-4">
+            <span className="bg-emerald-500 text-white text-sm font-medium px-4 py-2 rounded-full">
+              INVENTARIO ATIVO
+            </span>
+          </div>
+        </div>
       </div>
 
       <Modal 
