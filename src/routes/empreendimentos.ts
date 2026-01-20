@@ -50,7 +50,7 @@ export async function empreendimentoRoutes(fastify: FastifyInstance) {
       orderBy: { criadoEm: 'desc' },
     })
 
-    return reply.send(empreendimentos)
+    return reply.send({ empreendimentos })
   })
 
   fastify.get('/:id', async (request: FastifyRequest, reply: FastifyReply) => {

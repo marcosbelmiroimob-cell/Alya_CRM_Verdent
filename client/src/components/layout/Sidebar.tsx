@@ -3,7 +3,6 @@ import {
   LayoutDashboard, 
   Kanban, 
   Users, 
-  Building2, 
   Wallet,
   Sparkles,
   LogOut,
@@ -20,7 +19,6 @@ const navItems = [
   { to: '/leads', icon: Users, label: 'Leads' },
   { to: '/empreendimentos', icon: Landmark, label: 'Lançamentos' },
   { to: '/imoveis-usados', icon: Home, label: 'Usados' },
-  { to: '/imoveis', icon: Building2, label: 'Imóveis (Legado)' },
   { to: '/financeiro', icon: Wallet, label: 'Financeiro' },
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
 ]

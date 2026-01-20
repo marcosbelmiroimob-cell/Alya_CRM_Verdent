@@ -57,7 +57,28 @@ export async function imovelUsadoRoutes(fastify: FastifyInstance) {
       orderBy: { criadoEm: 'desc' },
     })
 
-    return reply.send(imoveis)
+    return reply.send({ imoveisUsados: imoveis })
+  })
+
+  fastify.get('/ativos', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as { id: number }
+
+    const imoveis = await prisma.imovelUsado.findMany({
+      where: { usuarioId: user.id, ativo: true },
+      select: {
+        id: true,
+        titulo: true,
+        tipoImovel: true,
+        valorVenda: true,
+        cidade: true,
+        bairro: true,
+        quartos: true,
+        areaUtil: true,
+      },
+      orderBy: { titulo: 'asc' },
+    })
+
+    return reply.send({ imoveisUsados: imoveis })
   })
 
   fastify.get('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -171,26 +192,5 @@ export async function imovelUsadoRoutes(fastify: FastifyInstance) {
     await prisma.imovelUsado.delete({ where: { id: parseInt(id) } })
 
     return reply.send({ success: true })
-  })
-
-  fastify.get('/ativos', async (request: FastifyRequest, reply: FastifyReply) => {
-    const user = request.user as { id: number }
-
-    const imoveis = await prisma.imovelUsado.findMany({
-      where: { usuarioId: user.id, ativo: true },
-      select: {
-        id: true,
-        titulo: true,
-        tipoImovel: true,
-        valorVenda: true,
-        cidade: true,
-        bairro: true,
-        quartos: true,
-        areaUtil: true,
-      },
-      orderBy: { titulo: 'asc' },
-    })
-
-    return reply.send(imoveis)
   })
 }
