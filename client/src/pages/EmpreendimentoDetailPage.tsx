@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card'
 import { Badge } from '../components/ui/Badge'
 import { Modal } from '../components/ui/Modal'
 import { Input } from '../components/ui/Input'
+import { Select } from '../components/ui/Select'
 import { TorreGrid } from '../components/empreendimento/TorreGrid'
 import { Empreendimento, Torre, Tipologia, StatusEmpreendimento } from '../types'
 import { empreendimentoService, torreService, tipologiaService } from '../services/api'
@@ -26,7 +27,19 @@ export function EmpreendimentoDetailPage() {
   const [selectedTorre, setSelectedTorre] = useState<Torre | null>(null)
   const [showTorreModal, setShowTorreModal] = useState(false)
   const [showTipologiaModal, setShowTipologiaModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  const [editForm, setEditForm] = useState({
+    nome: '',
+    incorporadora: '',
+    status: 'EM_CONSTRUCAO' as StatusEmpreendimento,
+    comissaoPercentual: '',
+    endereco: '',
+    cidade: '',
+    bairro: '',
+    descricao: '',
+  })
 
   const [torreForm, setTorreForm] = useState({
     nome: '',
@@ -123,6 +136,39 @@ export function EmpreendimentoDetailPage() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
   }
 
+  const openEditModal = () => {
+    if (empreendimento) {
+      setEditForm({
+        nome: empreendimento.nome,
+        incorporadora: empreendimento.incorporadora || '',
+        status: empreendimento.status,
+        comissaoPercentual: empreendimento.comissaoPercentual.toString(),
+        endereco: empreendimento.endereco || '',
+        cidade: empreendimento.cidade || '',
+        bairro: empreendimento.bairro || '',
+        descricao: empreendimento.descricao || '',
+      })
+      setShowEditModal(true)
+    }
+  }
+
+  const handleUpdateEmpreendimento = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSaving(true)
+    try {
+      await empreendimentoService.atualizar(parseInt(id!), {
+        ...editForm,
+        comissaoPercentual: parseFloat(editForm.comissaoPercentual),
+      })
+      setShowEditModal(false)
+      loadEmpreendimento()
+    } catch (error) {
+      console.error('Erro ao atualizar empreendimento:', error)
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex justify-center py-12">
@@ -174,7 +220,7 @@ export function EmpreendimentoDetailPage() {
             )}
           </div>
         </div>
-        <Button variant="outline" onClick={() => navigate(`/empreendimentos/${id}/editar`)}>
+        <Button variant="outline" onClick={openEditModal}>
           <Settings className="w-4 h-4 mr-2" />
           Editar
         </Button>
@@ -387,6 +433,72 @@ export function EmpreendimentoDetailPage() {
             </Button>
             <Button type="submit" loading={saving}>
               Criar Tipologia
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title="Editar Empreendimento" size="lg">
+        <form onSubmit={handleUpdateEmpreendimento} className="space-y-4">
+          <Input
+            label="Nome do Empreendimento"
+            value={editForm.nome}
+            onChange={(e) => setEditForm({ ...editForm, nome: e.target.value })}
+            required
+          />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Incorporadora"
+              value={editForm.incorporadora}
+              onChange={(e) => setEditForm({ ...editForm, incorporadora: e.target.value })}
+            />
+            <Select
+              label="Status"
+              value={editForm.status}
+              onChange={(e) => setEditForm({ ...editForm, status: e.target.value as StatusEmpreendimento })}
+              options={[
+                { value: 'FUTURO_LANCAMENTO', label: 'Futuro Lançamento' },
+                { value: 'EM_CONSTRUCAO', label: 'Em Construção' },
+                { value: 'PRONTO', label: 'Pronto' },
+              ]}
+            />
+          </div>
+
+          <Input
+            label="Comissão (%)"
+            type="number"
+            step="0.1"
+            value={editForm.comissaoPercentual}
+            onChange={(e) => setEditForm({ ...editForm, comissaoPercentual: e.target.value })}
+            required
+          />
+
+          <Input
+            label="Endereço"
+            value={editForm.endereco}
+            onChange={(e) => setEditForm({ ...editForm, endereco: e.target.value })}
+          />
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Bairro"
+              value={editForm.bairro}
+              onChange={(e) => setEditForm({ ...editForm, bairro: e.target.value })}
+            />
+            <Input
+              label="Cidade"
+              value={editForm.cidade}
+              onChange={(e) => setEditForm({ ...editForm, cidade: e.target.value })}
+            />
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4">
+            <Button type="button" variant="outline" onClick={() => setShowEditModal(false)}>
+              Cancelar
+            </Button>
+            <Button type="submit" loading={saving}>
+              Salvar Alterações
             </Button>
           </div>
         </form>
