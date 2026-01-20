@@ -3,6 +3,7 @@ import { z } from 'zod'
 import { prisma } from '../utils/prisma.js'
 import { qualificarLead, calcularScoreQualificacao } from '../services/ai/qualificadorHumanizado.js'
 import { assistenteChat, buscarDadosCRM } from '../services/ai/assistenteGlobal.js'
+import { getAIStatus } from '../services/ai/aiRouter.js'
 
 const chatSchema = z.object({
   mensagem: z.string().min(1),
@@ -254,5 +255,30 @@ export async function alyaRoutes(fastify: FastifyInstance) {
     })
 
     return { lead }
+  })
+
+  fastify.get('/status', async (request: FastifyRequest, reply: FastifyReply) => {
+    const aiStatus = getAIStatus()
+    
+    let prismaConectado = false
+    try {
+      await prisma.$queryRaw`SELECT 1`
+      prismaConectado = true
+    } catch (error) {
+      console.error('Erro ao verificar conexão Prisma:', error)
+    }
+    
+    return {
+      ia: {
+        geminiConfigurado: aiStatus.geminiAvailable,
+        openaiConfigurado: aiStatus.openaiAvailable,
+        openaiDentroLimite: aiStatus.openaiWithinLimit,
+        gastoMensal: `$${aiStatus.openaiMonthlySpend.toFixed(2)}/${aiStatus.openaiMonthlyLimit}`,
+      },
+      prisma: {
+        conectado: prismaConectado,
+      },
+      status: 'ok',
+    }
   })
 }

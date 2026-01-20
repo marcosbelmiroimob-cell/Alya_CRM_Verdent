@@ -16,20 +16,23 @@ type TabAtiva = 'assistente' | 'qualificar'
 export function AlyaGlobalChat() {
   const { isOpen, setIsOpen, contexto, paginaAtual } = useAlya()
   const [tabAtiva, setTabAtiva] = useState<TabAtiva>('assistente')
-  const [mensagens, setMensagens] = useState<Mensagem[]>([])
+  const [mensagensAssistente, setMensagensAssistente] = useState<Mensagem[]>([])
+  const [mensagensQualificar, setMensagensQualificar] = useState<Mensagem[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [conversaId, setConversaId] = useState<number | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [mensagens])
+  const mensagensAtivas = tabAtiva === 'assistente' ? mensagensAssistente : mensagensQualificar
 
   useEffect(() => {
-    if (isOpen && mensagens.length === 0) {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [mensagensAtivas])
+
+  useEffect(() => {
+    if (isOpen && mensagensAssistente.length === 0) {
       const saudacao = getSaudacaoContextual(contexto)
-      setMensagens([{
+      setMensagensAssistente([{
         id: 1,
         remetente: 'alya',
         conteudo: saudacao,
@@ -57,7 +60,9 @@ export function AlyaGlobalChat() {
     const novaMensagem = input.trim()
     setInput('')
     
-    setMensagens(prev => [...prev, {
+    const setMensagensAtivas = tabAtiva === 'assistente' ? setMensagensAssistente : setMensagensQualificar
+    
+    setMensagensAtivas(prev => [...prev, {
       id: Date.now(),
       remetente: tabAtiva === 'qualificar' ? 'lead' : 'usuario',
       conteudo: novaMensagem,
@@ -77,7 +82,7 @@ export function AlyaGlobalChat() {
           setConversaId(response.data.conversaId)
         }
 
-        setMensagens(prev => [...prev, {
+        setMensagensQualificar(prev => [...prev, {
           id: Date.now() + 1,
           remetente: 'alya',
           conteudo: response.data.resposta,
@@ -90,7 +95,7 @@ export function AlyaGlobalChat() {
           paginaAtual,
         })
 
-        setMensagens(prev => [...prev, {
+        setMensagensAssistente(prev => [...prev, {
           id: Date.now() + 1,
           remetente: 'alya',
           conteudo: response.data.resposta,
@@ -99,7 +104,7 @@ export function AlyaGlobalChat() {
       }
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error)
-      setMensagens(prev => [...prev, {
+      setMensagensAtivas(prev => [...prev, {
         id: Date.now() + 1,
         remetente: 'alya',
         conteudo: 'Desculpa, tive um probleminha. Tenta de novo?',
@@ -110,10 +115,22 @@ export function AlyaGlobalChat() {
     }
   }
 
+  const handleAssistente = () => {
+    setTabAtiva('assistente')
+    if (mensagensAssistente.length === 0) {
+      setMensagensAssistente([{
+        id: 1,
+        remetente: 'alya',
+        conteudo: getSaudacaoContextual(contexto),
+        timestamp: new Date(),
+      }])
+    }
+  }
+
   const handleNovaQualificacao = () => {
     setTabAtiva('qualificar')
     setConversaId(null)
-    setMensagens([{
+    setMensagensQualificar([{
       id: 1,
       remetente: 'alya',
       conteudo: 'Oi! Estou pronta para qualificar um novo lead. Cole a primeira mensagem do cliente ou me conta sobre ele.',
@@ -147,7 +164,7 @@ export function AlyaGlobalChat() {
 
       <div className="flex border-b border-slate-200 dark:border-slate-700">
         <button
-          onClick={() => setTabAtiva('assistente')}
+          onClick={handleAssistente}
           className={`flex-1 px-4 py-2.5 text-sm font-medium flex items-center justify-center gap-2 transition-colors ${
             tabAtiva === 'assistente'
               ? 'text-purple-600 border-b-2 border-purple-600 bg-purple-50 dark:bg-purple-900/20'
@@ -171,7 +188,7 @@ export function AlyaGlobalChat() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 max-h-80 min-h-[200px]">
-        {mensagens.map((msg) => (
+        {mensagensAtivas.map((msg) => (
           <div
             key={msg.id}
             className={`flex ${msg.remetente === 'alya' ? 'justify-start' : 'justify-end'}`}
