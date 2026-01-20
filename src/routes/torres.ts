@@ -29,6 +29,48 @@ export async function torreRoutes(fastify: FastifyInstance) {
     }
   })
 
+  fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as { id: number }
+    const { empreendimentoId } = request.query as { empreendimentoId?: string }
+
+    if (!empreendimentoId) {
+      return reply.status(400).send({ error: 'empreendimentoId é obrigatório' })
+    }
+
+    const empreendimento = await prisma.empreendimento.findFirst({
+      where: { id: parseInt(empreendimentoId), usuarioId: user.id },
+    })
+
+    if (!empreendimento) {
+      return reply.status(404).send({ error: 'Empreendimento não encontrado' })
+    }
+
+    const torres = await prisma.torre.findMany({
+      where: { empreendimentoId: parseInt(empreendimentoId) },
+      include: {
+        _count: { select: { unidades: true } },
+        unidades: {
+          select: { status: true },
+        },
+      },
+      orderBy: { nome: 'asc' },
+    })
+
+    const torresComStats = torres.map((torre: any) => ({
+      ...torre,
+      stats: {
+        total: torre.unidades.length,
+        disponiveis: torre.unidades.filter((u: any) => u.status === 'DISPONIVEL').length,
+        reservados: torre.unidades.filter((u: any) => u.status === 'RESERVADO').length,
+        vendidos: torre.unidades.filter((u: any) => u.status === 'VENDIDO').length,
+        bloqueados: torre.unidades.filter((u: any) => u.status === 'BLOQUEADO').length,
+      },
+      unidades: undefined,
+    }))
+
+    return reply.send({ torres: torresComStats })
+  })
+
   fastify.get('/empreendimento/:empreendimentoId', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as { id: number }
     const { empreendimentoId } = request.params as { empreendimentoId: string }

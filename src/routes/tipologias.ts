@@ -22,6 +22,33 @@ export async function tipologiaRoutes(fastify: FastifyInstance) {
     }
   })
 
+  fastify.get('/', async (request: FastifyRequest, reply: FastifyReply) => {
+    const user = request.user as { id: number }
+    const { empreendimentoId } = request.query as { empreendimentoId?: string }
+
+    if (!empreendimentoId) {
+      return reply.status(400).send({ error: 'empreendimentoId é obrigatório' })
+    }
+
+    const empreendimento = await prisma.empreendimento.findFirst({
+      where: { id: parseInt(empreendimentoId), usuarioId: user.id },
+    })
+
+    if (!empreendimento) {
+      return reply.status(404).send({ error: 'Empreendimento não encontrado' })
+    }
+
+    const tipologias = await prisma.tipologia.findMany({
+      where: { empreendimentoId: parseInt(empreendimentoId) },
+      include: {
+        _count: { select: { unidades: true } },
+      },
+      orderBy: { nome: 'asc' },
+    })
+
+    return reply.send({ tipologias })
+  })
+
   fastify.get('/empreendimento/:empreendimentoId', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as { id: number }
     const { empreendimentoId } = request.params as { empreendimentoId: string }
