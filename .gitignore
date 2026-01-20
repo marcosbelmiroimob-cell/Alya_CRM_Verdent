@@ -9,6 +9,7 @@ build/
 .next/
 out/
 server/public/
+public/
 
 # Environment variables
 .env

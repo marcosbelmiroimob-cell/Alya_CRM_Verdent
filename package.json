@@ -1,13 +1,13 @@
 {
-  "name": "crm-alya-server",
+  "name": "crm-alya",
   "version": "1.0.0",
   "type": "module",
-  "description": "Backend do CRM Alya - Sistema de Vendas Imobiliárias com IA",
+  "description": "CRM Alya - Sistema de Vendas Imobiliárias com IA",
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
-    "build:client": "cd ../client && npm install && npm run build",
+    "build:client": "cd client && npm install && npm run build",
     "build:copy": "node scripts/copy-client.js",
     "build:full": "npm run build:client && npm run build:copy && npm run build",
     "start": "node dist/index.js",
