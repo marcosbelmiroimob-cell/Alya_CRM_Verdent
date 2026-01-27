@@ -1,0 +1,18 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+        - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+    container_name: alya-crm-app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    networks:
+      - alya-network
+
+networks:
+  alya-network:
+    driver: bridge
