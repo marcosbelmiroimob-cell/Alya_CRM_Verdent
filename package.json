@@ -17,6 +17,8 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
     "db:migrate:supabase": "node scripts/migrate-supabase-to-mysql.js",
+    "vps:setup": "bash scripts/setup-vps-mysql.sh",
+    "vps:api": "node scripts/hostinger-api-setup.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {
