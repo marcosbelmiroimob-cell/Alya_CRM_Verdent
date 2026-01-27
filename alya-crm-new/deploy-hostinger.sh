@@ -22,10 +22,11 @@ REPO_URL="https://github.com/marcosbelmiroimob-cell/Alya_CRM_Verdent.git"
 SUPABASE_URL="https://fwuoqtqfchnbstxjjnvn.supabase.co"
 SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dW9xdHFmY2huYnN0eGpqbnZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODY1NjMsImV4cCI6MjA4MzQ2MjU2M30.a-BYAiYfmrdQ8MJECg7KIZXLGBGgcXyHrLuFF0t1IAw"
 
-# IMPORTANTE: Substitua pelos valores reais
-# Obtenha a SERVICE_ROLE_KEY em: Dashboard Supabase > Settings > API > service_role
-SUPABASE_SERVICE_ROLE_KEY="SUBSTITUA_PELA_SUA_SERVICE_ROLE_KEY"
-WEBHOOK_API_KEY="alya_wh_n8n_2024_$(openssl rand -hex 16)"
+# Service Role Key do Supabase (para bypass RLS na API)
+SUPABASE_SERVICE_ROLE_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dW9xdHFmY2huYnN0eGpqbnZuIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2Nzg4NjU2MywiZXhwIjoyMDgzNDYyNTYzfQ.5z-FoMhjL8qhk5G5EKBoJmRM3PLLHjZ3nYjNPoo8MtI"
+
+# Chave de autenticação para webhooks do n8n
+WEBHOOK_API_KEY="alya_wh_n8n_2024_secure_key_abc123xyz"
 
 # ====================
 # 1. VERIFICAR/INSTALAR DOCKER
@@ -134,15 +135,6 @@ if docker compose ps | grep -q "Up"; then
     echo "=============================================="
     echo "  Header:    X-API-Key"
     echo "  API Key:   ${WEBHOOK_API_KEY}"
-    echo ""
-    echo "=============================================="
-    echo "IMPORTANTE:"
-    echo "=============================================="
-    echo "  1. Configure a SUPABASE_SERVICE_ROLE_KEY no .env"
-    echo "     Obtenha em: Dashboard Supabase > Settings > API > service_role"
-    echo ""
-    echo "  2. Após configurar, reinicie com:"
-    echo "     cd /opt/alya-crm/alya-crm-new && docker compose restart api"
     echo ""
 else
     echo -e "${RED}ERRO: Containers não estão rodando${NC}"
