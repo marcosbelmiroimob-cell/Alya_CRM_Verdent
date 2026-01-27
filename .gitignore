@@ -44,3 +44,10 @@ coverage/
 # Misc
 *.tsbuildinfo
 .cache/
+
+# Security - Sensitive files with credentials
+.mcp.json
+*.sh
+*.sql
+EXECUTAR_AGORA.md
+INSTRUCOES_FIX_VPS.md
