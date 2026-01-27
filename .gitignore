@@ -48,7 +48,10 @@ coverage/
 # Security - Sensitive files with credentials
 .mcp.json
 *.sh
+!docker-entrypoint.sh
+!scripts/rotate-secrets.sh
 *.sql
+!alya-crm-new/mysql/init/*.sql
 EXECUTAR_AGORA.md
 INSTRUCOES_FIX_VPS.md
 

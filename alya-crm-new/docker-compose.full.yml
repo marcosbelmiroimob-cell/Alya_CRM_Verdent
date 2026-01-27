@@ -1,0 +1,123 @@
+# ═══════════════════════════════════════════════════════════════
+#  Docker Compose - CRM Alya Verdent (Stack Completo)
+# ═══════════════════════════════════════════════════════════════
+#
+#  Stack: Frontend (React/Nginx) + Backend (Node/Fastify) + MySQL
+#
+#  Inicialização:
+#    docker-compose -f docker-compose.full.yml up -d
+#
+#  Parar:
+#    docker-compose -f docker-compose.full.yml down
+#
+#  Logs:
+#    docker-compose -f docker-compose.full.yml logs -f
+#
+# ═══════════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # ───────────────────────────────────────────────────────────────
+  #  MYSQL - Banco de Dados
+  # ───────────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: alya-crm-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_password_change_me}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-alyacrm}
+      MYSQL_USER: ${MYSQL_USER:-alyacrm_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-alyacrm_password_change_me}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d  # Scripts de inicialização
+    networks:
+      - alya-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-root_password_change_me}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+
+  # ───────────────────────────────────────────────────────────────
+  #  BACKEND - API Fastify (Node.js)
+  # ───────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    container_name: alya-crm-backend
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      # Database
+      - DATABASE_URL=mysql://${MYSQL_USER:-alyacrm_user}:${MYSQL_PASSWORD:-alyacrm_password_change_me}@mysql:3306/${MYSQL_DATABASE:-alyacrm}
+
+      # JWT
+      - JWT_SECRET=${JWT_SECRET}
+
+      # IA APIs
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MONTHLY_LIMIT_USD=${OPENAI_MONTHLY_LIMIT_USD:-5.00}
+
+      # App Config
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=3001
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:80}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - alya-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ───────────────────────────────────────────────────────────────
+  #  FRONTEND - React + Nginx
+  # ───────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:3001}
+    container_name: alya-crm-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - alya-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+# ═══════════════════════════════════════════════════════════════
+#  VOLUMES - Persistência de Dados
+# ═══════════════════════════════════════════════════════════════
+volumes:
+  mysql_data:
+    driver: local
+
+# ═══════════════════════════════════════════════════════════════
+#  NETWORKS - Comunicação entre containers
+# ═══════════════════════════════════════════════════════════════
+networks:
+  alya-network:
+    driver: bridge

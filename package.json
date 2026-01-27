@@ -16,6 +16,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:seed": "tsx prisma/seed.ts",
     "db:studio": "prisma studio",
+    "db:migrate:supabase": "node scripts/migrate-supabase-to-mysql.js",
     "postinstall": "prisma generate"
   },
   "dependencies": {
