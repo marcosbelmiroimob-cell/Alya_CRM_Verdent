@@ -23,15 +23,61 @@ import { imovelUsadoRoutes } from './routes/imoveis-usados.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+// Validação de variáveis de ambiente obrigatórias
+function validateEnvironment() {
+  const requiredEnvVars = [
+    'DATABASE_URL',
+    'JWT_SECRET',
+  ]
+
+  const missingVars = requiredEnvVars.filter(varName => !process.env[varName])
+
+  if (missingVars.length > 0) {
+    console.error('❌ ERRO: Variáveis de ambiente obrigatórias não configuradas:')
+    missingVars.forEach(varName => console.error(`   - ${varName}`))
+    console.error('\nConfigure essas variáveis no arquivo .env antes de iniciar.')
+    process.exit(1)
+  }
+
+  // Validações de segurança
+  if (process.env.NODE_ENV === 'production') {
+    if (!process.env.GEMINI_API_KEY && !process.env.OPENAI_API_KEY) {
+      console.warn('⚠️  AVISO: Nenhuma API key de IA configurada (GEMINI ou OPENAI)')
+    }
+
+    if (process.env.JWT_SECRET === 'dev-secret-change-in-production') {
+      console.error('❌ ERRO: JWT_SECRET ainda está com valor padrão em produção!')
+      process.exit(1)
+    }
+
+    if (process.env.JWT_SECRET && process.env.JWT_SECRET.length < 32) {
+      console.error('❌ ERRO: JWT_SECRET deve ter no mínimo 32 caracteres em produção')
+      process.exit(1)
+    }
+  }
+
+  console.log('✅ Variáveis de ambiente validadas com sucesso')
+}
+
 async function bootstrap() {
+  validateEnvironment()
   const fastify = Fastify({
     logger: true,
   })
 
+  // CORS: Whitelist em produção, permissivo em desenvolvimento
+  const allowedOrigins = process.env.NODE_ENV === 'production'
+    ? (process.env.FRONTEND_URL?.split(',') || ['https://alyacrm.com.br'])
+    : true
+
   await fastify.register(cors, {
-    origin: true,
+    origin: allowedOrigins,
     credentials: true,
   })
+
+  fastify.log.info(`CORS configurado - Origens: ${
+    allowedOrigins === true ? 'Todas (desenvolvimento)' : allowedOrigins
+  }`)
 
   await fastify.register(jwt, {
     secret: process.env.JWT_SECRET || 'dev-secret-change-in-production',
