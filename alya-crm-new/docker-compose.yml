@@ -10,8 +10,34 @@ services:
     restart: unless-stopped
     ports:
       - "80:80"
+    depends_on:
+      - api
     networks:
       - alya-network
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    container_name: alya-crm-api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - HOST=0.0.0.0
+      - SUPABASE_URL=${VITE_SUPABASE_URL}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - WEBHOOK_API_KEY=${WEBHOOK_API_KEY}
+      - ALLOWED_ORIGINS=http://76.13.81.66:5678,http://localhost:5678,http://n8n:5678
+      - LOG_LEVEL=info
+    networks:
+      - alya-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
 networks:
   alya-network:

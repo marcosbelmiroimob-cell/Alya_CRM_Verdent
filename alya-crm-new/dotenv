@@ -1,2 +1,11 @@
 VITE_SUPABASE_URL=https://fwuoqtqfchnbstxjjnvn.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ3dW9xdHFmY2huYnN0eGpqbnZuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4ODY1NjMsImV4cCI6MjA4MzQ2MjU2M30.a-BYAiYfmrdQ8MJECg7KIZXLGBGgcXyHrLuFF0t1IAw
+
+# API Webhook - Integração n8n
+# IMPORTANTE: Obtenha a service_role key no dashboard do Supabase
+# Settings > API > service_role (secret)
+SUPABASE_SERVICE_ROLE_KEY=SUA_SERVICE_ROLE_KEY_AQUI
+
+# Chave de autenticação para webhooks do n8n
+# Use esta chave no header X-API-Key nas requisições do n8n
+WEBHOOK_API_KEY=alya_wh_n8n_2024_secure_key_abc123xyz

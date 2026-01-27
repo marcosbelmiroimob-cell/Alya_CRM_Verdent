@@ -73,6 +73,7 @@ export const ORIGEM_LEAD = [
   { value: 'FACEBOOK', label: 'Facebook' },
   { value: 'INSTAGRAM', label: 'Instagram' },
   { value: 'INDICACAO', label: 'Indicação' },
+  { value: 'GOOGLE_ADS', label: 'Google Ads' },
 ] as const
 
 export const TIPO_IMOVEL = [

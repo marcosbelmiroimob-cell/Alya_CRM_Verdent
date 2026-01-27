@@ -23,7 +23,7 @@ export interface Lead {
   profissao: string | null
   estado_civil: string | null
   renda_mensal: number | null
-  origem: 'MANUAL' | 'SITE' | 'WHATSAPP' | 'FACEBOOK' | 'INSTAGRAM' | 'INDICACAO'
+  origem: 'MANUAL' | 'SITE' | 'WHATSAPP' | 'FACEBOOK' | 'INSTAGRAM' | 'INDICACAO' | 'GOOGLE_ADS'
   orcamento_min: number | null
   orcamento_max: number | null
   preferencias: Record<string, any>
